@@ -35,6 +35,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'backend', items:[
         {text: 'nginx基础',link: '/后端/nginx/nginx_base'},
+        {text: 'Git',link: '/后端/git/git'},
         {text: 'FastAPI',link: '/后端/fastapi/fastapi'},
       ] },
       { text: 'AI', items:[
