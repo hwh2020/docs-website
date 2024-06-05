@@ -33,15 +33,22 @@ export default defineConfig({
   },
     nav: [
       { text: 'Home', link: '/' },
+
       { text: 'backend', items:[
         {text: 'nginx基础',link: '/后端/nginx/nginx_base'},
         {text: 'Git',link: '/后端/git/git'},
         {text: 'FastAPI',link: '/后端/fastapi/fastapi'},
       ] },
+
       { text: 'AI', items:[
         {text: '神经网络与深度学习',link: '/AI学习/神经网络与深度学习'}
-      ]}
+      ]},
+      
+      { text: 'Other', items:[
+        {text: '全链路日志追踪',link: '/后端/other/全链路日志追踪'}
+      ]
 
+      }
     ],
 
     // sidebar: [
