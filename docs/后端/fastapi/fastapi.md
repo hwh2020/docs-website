@@ -30,6 +30,8 @@
    
    
 
+---
+
 ##### 请求与响应
 
 ![](./fastapi_img/请求与响应.png)
@@ -48,7 +50,7 @@
 
 注意get请求没有请求体,他的数据是挂载在URL地址?后面传递过去.
 
-
+---
 
 ##### URL地址
 
@@ -56,7 +58,7 @@
 
 例如：` https://www.baidu.com/s?wd=yuan `其中https是协议，www.baidu.com 是IP，端口默认80，/s是路径，参数是wd=yuan
 
-
+---
 
 ##### get请求和post请求
 
@@ -64,7 +66,7 @@
 
 ● GET提交的数据大小有限制（因为浏览器对URL的长度有限制），而POST方法提交的数据没有限制
 
-
+---
 
 ##### Content-Type
 
@@ -92,6 +94,8 @@ application/x-www-form-urlencoded：这是 HTML 表单提交时默认的编码�
 
 通俗来说,content-type是告诉服务器应该用何种数据格式进行反解出原始数据.
 
+---
+
 #### 前后端分离
 
 **前后端不分离模式[客户端看到的内容和所有界面效果都是由服务端提供出来的。]**
@@ -108,7 +112,7 @@ application/x-www-form-urlencoded：这是 HTML 表单提交时默认的编码�
 
 ![](fastapi_img/前后端分离模式.png)
 
-
+---
 
 #### API概念
 
@@ -124,7 +128,7 @@ application/x-www-form-urlencoded：这是 HTML 表单提交时默认的编码�
 
 目前市面上大部分公司开发人员使用的接口实现规范主要有：restful、RPC。
 
-
+---
 
 #### Restful规范
 
@@ -146,7 +150,7 @@ RESTful是一种专门为Web 开发而定义API接口的设计风格，尤其适
 
 restful规范是一种通用的规范，不限制语言和开发框架的使用。事实上，我们可以使用任何一门语言，任何一个框架都可以实现符合restful规范的API接口。
 
-
+---
 
 #### uvicorn
 
@@ -179,7 +183,7 @@ if __name__ == "__main__":
 | reload_dirs | 设置需要 reload 的目录，List[str] 类型 |
 |  log_level  |        设置日志级别，默认 info         |
 
-
+---
 
 ### FastAPI基本流程
 
@@ -195,7 +199,8 @@ if __name__ == "__main__":
 
 6. 运行开发服务器（如 uvicorn main:app --reload）
 
-	
+
+---
 
 ### 创建FastAPI实例
 
@@ -226,7 +231,7 @@ API 元数据
 | docs_url | str | 设置文档URL,默认为/docs. 当docs_url=None表示禁用 |
 |  |      |      |
 
-
+---
 
 ### 路径操作装饰器
 
@@ -250,7 +255,7 @@ async def test_get(id: int):
     return {"code": 200, "msg": "success", "data": datas}
 ```
 
-
+---
 
 #### **@app.post()**
 
@@ -279,7 +284,7 @@ async def test_post(info:Info):
     return {"code": 200, "msg": "success", "data": ""}
 ```
 
-
+---
 
 #### **@app.put()**
 
@@ -299,7 +304,7 @@ async def test_put(id:int,info:Info):
     return {"code": 200, "msg": "success", "data": ""}
 ```
 
-
+---
 
 #### @app.delete()
 
@@ -315,7 +320,7 @@ async def test_delete(id:int):
     return {"code": 200, "msg": "success", "data": ""}
 ```
 
-
+---
 
 #### @app.patch()
 
@@ -335,7 +340,7 @@ async def test_patch(id:int,info:Info):
     return {"code": 200, "msg": "success", "data": ""}
 ```
 
-
+---
 
 #### 装饰器的参数
 
@@ -364,7 +369,7 @@ async def test_patch(id:int,info:Info):
 
 **methods:** 仅在 app.api_route() 装饰器中使用，它允许你为同一个路径指定多个HTTP方法。
 
-
+---
 
 ### 路径操作函数
 
@@ -405,6 +410,8 @@ async def getUser(user_id:int):
 > 由于路径操作是按顺序依次运行的(从上到下进行匹配)，你需要确保路径 /user/me 声明在路径 /user/{username}之前.否则，/user/{username} 的路径还将与 /user/me 相匹配，"认为"自己正在接收一个值为 "me" 的 username 参数。
 >
 
+---
+
 #### 查询参数
 
 ```python
@@ -426,7 +433,9 @@ async def test_get(id: int,name:str,sex:int):
     return {"code": 200, "msg": "success", "data": datas}
 ```
 
-#### 路由函数参数的类型
+---
+
+#### 参数的类型
 
 ##### 基本类型声明:
 
@@ -439,6 +448,8 @@ async def test_type(id:int,name:str,price:float,flag:bool):
 ```
 
 使用类型声明,fastapi会进行数据验证,在运行路由函数前验证请求数据是否符合你在类型声明中指定的类型,这有助于捕获错误并在早期阶段解决问题,从而避免了在服务器内部处理无效数据可能导致的错误和异常.
+
+---
 
 ##### typing类型注释
 
@@ -570,13 +581,39 @@ typing模块 包含基本类型注释,`str`, `int`, `bool`, `float` 等等.但�
 	    return {"code":200,"msg":"success","data":name}
 	```
 
-	
+
+---
 
 ##### Query
 
 如果想对查询参数进行更加复杂的类型校验和额外的校验(比如大于小于),可以使用Query模块.
 
 FastAPI的Query模块通常与FastAPI的路由函数一起使用,使用Query对象来指定查询参数的属性，如默认值、验证规则等
+
+Query的字段
+
+```python
+def Query(
+	default: Any,		
+    *,
+    alias: Optional[str] = None,	# 别名
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+    example: Any = Undefined,
+    examples: Optional[Dict[str,Any]] = None,
+    deprecated: Optional[bool] = None,		# 是否弃用
+    **extra: Any,
+) -> Any:
+```
+
+
 
 ```python
 from fastapi import Query
@@ -606,14 +643,81 @@ async def test_Query(lst:Optional[List[str]] = Query(["a","b"],min_length=3,max_
 限定于字符串的校验：
 
 - min_length
+
 - max_length
+
 - regex
+
+	
+
+---
+
+
 
 ##### Path
 
+==Query模块只能对查询参数进行校验,==如果需要对路径参数进行校验,可以使用Path模块.
+
+```python
+def Path(
+	default: Any,		
+    *,
+    alias: Optional[str] = None,	
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+    example: Any = Undefined,
+    examples: Optional[Dict[str,Any]] = None,
+    deprecated: Optional[bool] = None,
+    **extra: Any,
+) -> Any:
+```
+
+可以看到它于Query的参数是一模一样的.
+
+```python
+from fastapi import Path
+from typing import Optional,List
+
+@app.get("/test/{path_id}")
+async def test_Path(path_id: Optional[str] = Path(..., gt=10,le=20,)):
+    pass
+
+# 对位置参数path_id进行限制.
+```
+
+---
+
+##### Pydantic请求体
+
+FastAPI更推荐使用Pydantic请求体来对传进来的参数进行校验.
+
+```python
+from fastapi import FastAPI
+from typing import Optional
+from pydantic import BaseModel
+
+# 自定义一个pydantic模型
+class UserInfo(BaseModel):
+    user_id: int
+    name: str
+    sex: int
+    birthday: Optional[str] = None
+    address: Optional[str] = None
+    
+@app.post("/test/pydantic")
+async def test_Pydantic(user: UserInfo):
+    pass
+
+```
 
 
-请求体数据
 
 Form表单数据
 
