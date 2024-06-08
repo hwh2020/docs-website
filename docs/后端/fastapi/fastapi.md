@@ -717,17 +717,386 @@ async def test_Pydantic(user: UserInfo):
 
 ```
 
+使用Pydantic请求体格式,可以让FastAPI对参数进行校验,且可以将字段值转换相应的类型,例如对设定类型是str的字段传入int型的数据,FastAPI会自动转为str类型.若转换不了,就会报type_error错误.
 
 
-Form表单数据
 
-文件上传
+Pydantic的Field函数
+
+用于定义模型字段的额外元数据或设置验证规则
+
+```python
+from pydantic import BaseModel,Field
+
+class UserInfo(BaseModel):
+    user_id: int
+    name: str
+	age: int = Field(default=1,gt=0,lt=100)
+```
+
+
+
+扩展: pydantic 的 field_validator 装饰器创建自定义字段校验逻辑.
+
+注意pydantic v1版本已经不再更新,现在迁移到v2版本,故而v1的validator验证器已经被废弃,使用v2的field_validator验证器.
+
+```python
+from pydantic import BaseModel, field_validator, ValidationError, ValidationInfo
+
+class StudentInfo(BaseModel):
+    name: str
+    xuehao: str
+    class_name: str
+    class_id: int
+    courses: List[int] = []
+
+    @field_validator("name")
+    @classmethod
+    def name_must_alpha(cls,v:str) -> str:
+        if value.isalpha():
+            raise ValidationError('name must be alpha')
+        return value
+
+    @field_validator("xuehao","class_name",mode="before")
+    @classmethod
+    def sno_validate(cls,v:str, info:ValidationInfo) ->:
+        if isinstance(v,str):
+            is_alphanumeric = v.replace(" ",'').isalnum()
+            assert is_alphanumeric, f"{info.field_name} must be alphanumeric"
+        return v
+    
+
+# mode="before" 可以指定验证是在字段验证前还是验证后进行
+# 
+# v是要验证的字段值
+# info是一个字典,包含正在验证的字段相关信息
+# ValidationInfo的字段
+# context     当前验证器的上下文
+# config	  验证器的配置
+# mode		  正在验证的输入数据的类型 [python,json]
+# data		  正在为此pydantic模型验证的数据
+# field_name  当前验证的字段的名字
+    
+    
+    
+```
+
+
+
+同时声明请求体、路径参数、查询参数
+
+```python
+from typing import Optional
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+# 自定义一个pydantic模型
+class UserInfo(BaseModel):
+    name: str
+    sex: int
+    birthday: Optional[str] = None
+    address: Optional[str] = None
+    
+@app.post("/test/{item_id}")
+async def test_Pydantic(item_id:int,user_id:int, userinfo: UserInfo):
+    pass
+
+# 路径参数item_id,	查询参数user_id,	请求体userinfo
+```
+
+
+
+> [!NOTE]
+>
+> FastAPI识别参数的逻辑
+>
+> - 如果参数在路径中声明，它将解释为路径参数,例如item_id
+> - 如果参数被声明为 Pydantic 模型的类型，它将被解析为请求体,例如userinfo
+> - 其他情况，解释为查询参数，例如user_id
+
+---
+
+##### Body
+
+上面说到如果路径函数的参数没有声明为Pydantic模型,那它将解析为查询参数,那么如果要不解析为查询参数,除了声明为Pydantic模型,还有通过Body函数
+
+- 主要作用：可以将单类型的参数成为 Request Body 的一部分，即从查询参数变成请求体参数
+- 和 Query、Path 提供的额外校验、元数据是基本一致的（多了个 embed 参数）
+
+```python
+def Body(
+	default: Any,		
+    *,
+    embed:bool = False,
+    media_type:str = "application/json",
+    alias: Optional[str] = None,	
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+    example: Any = Undefined,
+    examples: Optional[Dict[str,Any]] = None,
+    **extra: Any,
+) -> Any:
+```
+
+例子:
+
+```python
+from fastapi import FastAPI,Body
+from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price: float
+    tax: Optional[float] = None
+
+
+class User(BaseModel):
+    username: str
+    full_name: Optional[str] = None
+
+
+@app.put("/test/{item_id}")
+async def test_Body(
+        item_id: int,
+        item: Item,
+        user: User,
+        importance: int = Body(...)
+):
+    results = {"item_id": item_id, "item": item, "user": user, "importance": importance}
+    return results
+
+
+# 期望得到的请求体为
+#{
+#    "item": {
+#        "name": "Foo",
+#        "description": "The pretender",
+#        "price": 42.0,
+#        "tax": 3.2
+#    },
+#    "user": {
+#        "username": "dave",
+#        "full_name": "Dave Grohl"
+#    },
+#    "importance": 5
+#}
+# Reuquest Body中多了个importance字段
+```
+
+Body()中的 embed参数
+
+当请求体只有一个pydantic模型时,默认是不需要指定字段名的
+
+```python
+from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    price: float
+
+@app.post("/test/{item_id}")
+async def test_Body(item_id:int, item: Item):
+    pass
+# 期望得到的请求体
+#{
+#	"name": "Foo",
+#	"price": 42.0
+#}
+# 并不需要指定字段名item
+```
+
+当我们要求一定要有字段名,可以使用embed参数
+
+```python
+from fastapi import FastAPI,Body
+from pydantic import BaseModel
+
+class Item(BaseModel):
+    name: str
+    price: float
+
+@app.post("/test/{item_id}")
+async def test_Body(item_id:int, item: Item = Body(...,embed=True)):
+    pass
+# 期望得到的请求体
+#{
+#	"item":{
+#		"name": "Foo",
+#		"price": 42.0
+#	}
+#}
+# 需要指定字段名item
+```
+
+---
+
+#### Form表单数据
+
+通过form-data表单格式传参,FastAPI通过Form来声明参数是表单数据.
+
+```python
+from fastapi import FastAPI, Form
+
+@app.post("/test/Form")
+async def test_Form(username:str = Form(...),password:str = Form(...)):
+    pass
+
+# 将用户名,密码作为表单字段发送,而不是JSON格式.
+```
+
+---
+
+#### 文件上传
+
+```python
+from fastapi import FastAPI, File, UploadFile
+from typing import List
+
+@app.post("/test/file")
+async def test_File(file: bytes = File(...)):
+    pass
+
+@app.post("/test/uploadfile")
+async def test_UploadFile(file: UploadFile = File(...)):
+    pass
+
+# 上传多个文件
+@app.post("/test/file")
+async def test_File(file: List[bytes] = File(...)):
+    pass
+
+@app.post("/test/uploadfile")
+async def test_UploadFile(file: List[UploadFile] = File(...)):
+    pass
+
+```
+
+> [!NOTE]
+>
+> File
+>
+> File类型用于读取文件内容为byte或str.
+>
+> 当你使用 File 作为操作函数的参数类型时，文件的内容将直接被读取到内存中。这适用于小文件，因为它们可以快速被加载处理。使用 File 类型时，你不会接收到文件的元数据，比如文件名或者文件类型。
+>
+> UploadFile
+>
+> 存储在内存中的文件达到最大大小限制，超过此限制后，它将存储在磁盘中，可以很好地处理大文件，如图像、视频、大型二进制文件等，而不会消耗所有内存
+>
+> 可以从上传的文件中获取元数据. 
+>
+> filename: str 	上传的原始文件名 例如 test.jpg
+>
+> content_type: str	包含 content-type（MIME type / media type），例如 image/jpeg
+>
+> 
+>
+> 总的来说,   UploadFile 类型是 FastAPI 特有的，提供了更多的操作文件的方法，特别适用于大文件，因为它支持异步的文件写入和读取，可以减少内存消耗。
+>
+> 使用 UploadFile 时，你可以访问文件的元数据，如文件名（filename）、内容类型（content_type）等。
+>
+> UploadFile 提供了保存文件到磁盘的方法，这对于需要处理上传的文件并将它们保存在服务器上的场景非常有用。
+>
+> 它还支持异步的读写操作，对于不想阻塞主线程处理其他请求的同时处理文件上传的场景非常合适。
+
+
 
 ### 路由分发
 
+`mian.py`
+
+```python
+# main.py
+
+import uvicorn
+from fastapi import FastAPI
+from app.user import user_router
+
+
+app = FastAPI()
+app.include_router(user_router, prefix="/user")
+
+if __name__ == "__main__":
+    uvicorn.run(app="main:app",host="127.0.0.1",port=8080,reload=True, debug=True)
+```
+
+`\app\user.py`
+
+```python
+# user.py
+
+from fastapi import APIRouter
+
+user_router = APIRouter()
+
+@user_router.get("/router") 
+async def test_router():
+    pass
+
+
+```
+
+---
+
 ### 请求与响应
 
-### Request对象
+#### Cookie
+
+```python
+from fastapi import FastAPI, Cookie
+from fastapi.responses import JSONResponse
+
+# 读取Cookie
+@app.get("/test/cookie")
+async def test_cookie(name: Optional[str] = Cookie(None)):
+    pass
+# name 需要在Cookie的Name对应上才能拿到数据.
+
+# 返回Set-Cookie 表示浏览器需要设置的一些 Cookie
+@app.get("/test/set-cookie")
+async def test_set_cookie():
+    content = {"code":200,"msg":"success","data":""}
+    response = JSONResponse(content=content)
+    response.set_cookie(key="username",value="Mrhow")
+    return response
+```
+
+---
+
+#### Header
+
+
+
+
+
+---
+
+#### Request对象
+
+在函数中声明Request类型的参数，FastAPI 就会自动传递 Request 对象给这个参数，我们就可以获取到 Request 对象及其属性信息，例如 header、url、cookie、session 等。
+
+```python
+from fastapi import FastAPI, Request
+
+@app.get("/test/request")
+async test_request(request: Request):
+    return {
+        "请求URL": request.url,
+        "请求IP": request.client.host,
+        "请求宿主": request.header.get("user-agent"),
+        "cookies": request.cookies
+    }
+```
+
+
 
 ### BackgroundTasks后台任务
 
