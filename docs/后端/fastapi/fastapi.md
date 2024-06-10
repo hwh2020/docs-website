@@ -1096,9 +1096,177 @@ async test_request(request: Request):
     }
 ```
 
+---
 
+#### 请求静态文件
+
+```python
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+app = FastAPI()
+static_dir = "./static"
+
+app.mount("/static",StaticFiles(directory=static_dir))
+
+# 这样就可以通过https://localhost:8080/static 来给前端访问静态资源.
+```
+
+---
+
+#### 响应模型
+
+ response_model
+
+FastAPI 提供了 response_model 参数，声明 return 响应体的模型. response_model 是路径操作的参数，并不是路径函数的参数
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel, EmailStr
+
+class UserIn(BaseModel):
+    username: str
+    password: str
+    email: EmailStr
+   
+class UserOut(BaseModel):
+    username: str
+    email: EmailStr
+    
+@app.post("/test/response_model", response_model= UserOut)
+async def test_reponse_model(user:UserIn):
+    return user
+
+
+```
+
+这个响应模型用于：
+
+数据转换：自动将你的输出数据转换（或序列化）为定义的模型格式。这意味着，无论你的内部数据结构如何，最终返回给客户端的都将是符合 response_model 定义的格式。
+
+数据验证：在数据被发送给客户端之前验证数据符合模型的定义。这有助于确保返回的数据是有效和一致的，增加了API的健壮性。
+
+输出限制：限制返回数据的字段。如果你的模型中包含了不希望暴露给客户端的敏感数据或内部信息，response_model 可以帮助你仅仅返回那些你希望返回的数据。例如密码password
+
+---
+
+ response_model_exclude_unset
+
+排除未设置的值.
+
+使用路径操作装饰器的 response_model 参数来定义响应模型，特别是确保私有数据被过滤掉。使用 response_model_exclude_unset 来仅返回显式设定的值。
+
+除了response_model_exclude_unset以外，还有response_model_exclude_defaults和response_model_exclude_none，我们可以很直观的了解到他们的意思，排除是默认值的字段和排除是None的字段。
+
+还有response_model_exclude = {“xxx”,”yyy”} 排除xxx,yyy字段
+
+response_model_include= {“zzz”}  只显示zzz字段.
+
+![](fastapi_img/response_model.jpg)
+
+
+
+---
+
+#### 响应状态码
+
+可以在任何路径操作中添加参数status_code来声明响应的状态码.
+
+- status_code 接收一个带有 HTTP 状态代码的 number
+
+- status_code 也可以接收一个 IntEnum
+
+- 如果是 number，可以使用 from fastapi import status ，里面都是封装好的状态码变量，直接调用即可
+
+- 如果是 IntEnum，可以使用 from http import HTTPStatus ，是一个 int 类型的枚举类
+
+	
+
+```python
+from fastapi import status
+from http import HTTPStatus
+
+@app.post("/test/status_code/1",status_code=status.HTTP_201_CREATED)
+async def create_item(name:str):
+    pass
+
+@app.post("/test/status_code/2",status_code=HTTPStatus.CREATED)
+async def create_item(name:str):
+    pass
+
+@app.post("/test/status_code/3",status_code=201)
+async def create_item(name:str):
+    pass
+
+# 默认是200
+```
+
+---
 
 ### BackgroundTasks后台任务
+
+BackgroundTasks是 FastAPI 框架的一个功能，它允许我们在响应已经返回给客户端后继续处理任务，而无需等待任务完成。这意味着这些任务将在后台异步执行，而不会阻塞主请求——响应循环。这在处理一些非实时关键的任务时非常有用，比如发送电子邮件、日志记录、消息通知等
+
+```python
+from fastapi import FastAPI, BackgroundTasks
+
+def write_notification(email: str,message=""):
+    with open("log.txt",mode="w") as email_file:
+        content = f"notification for {email}: {message}"
+        email_file.write(content)
+        
+@app.post("/test/backgroundTasks")
+async def send_notification(email: str, background_task: BackgroundTasks):
+    background_tasks.add_task(write_notification, email, message="some notifications")
+    return {"code":200,"msg":"success",data=""}
+
+# 后台处理任务函数write_notification, 无须等待,直接返回响应体.
+# 其中的add_task()接收的参数有
+# 后台运行任务函数 ,例如 write_notification
+# 按顺序传递给任务函数的任何参数序列 ,或者传递关键字参数
+```
+
+阻塞问题:
+
+有时候我们的后台函数中也可能包含阻塞操作，例如网络请求,因为后台函数里的网络请求阻塞了，会导致整个请求也被阻塞
+
+要解决这个问题，可以通过线程、进程或协程来执行后台任务.
+
+线程: 使用 `threading`模块
+
+```python
+import threading
+
+def write_notification(email, message):
+    t = threading.Thread(target=send_notification, args=[email,message])
+    t.start()
+    
+```
+
+进程: 使用 `multiprocessing`模块
+
+```python
+import multiprocessing
+
+def write_notification(email, message):
+    p = multiprocessing.Process(target=send_notification, args=[email,message])
+    p.start()
+```
+
+协程: 使用`asyncion`模块
+
+```python
+import asyncio
+
+def write_notification(email, message):
+	await notify(email,message) # 使用 asyncio.sleep 代替 time.sleep
+    
+def background_tasks(email,message):
+    loop = asyncio.get_event_loop()
+    loop.create_task(write_notification(email,message))
+```
+
+
 
 ### 依赖注入
 
