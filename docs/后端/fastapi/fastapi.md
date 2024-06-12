@@ -1270,6 +1270,220 @@ def background_tasks(email,message):
 
 ### 依赖注入
 
+什么是依赖注入?
+
+在依赖注入中，依赖项（也称为组件或服务）不是在代码内部创建或查找的，而是由外部系统提供给组件。这种方式有助于降低组件之间的耦合度，使系统更加灵活、可维护和可测试。
+
+ 
+
+依赖注入非常适合在业务逻辑复用的场景使用，可以有效地减少代码重复，除此之外，在进行权限校验、身份验证、共享数据库连接等场景也非常适用。
+
+ 
+
+通俗的理解： 依赖注入是一种软件设计模式，用于管理不同模块之间的依赖关系。在依赖注入中，一个对象不会直接创建或者获取它所依赖的对象，而是通过外部传递来实现。这种方式使得代码更加灵活、可维护、可测试。
+
+ 
+
+当该接口被调用的时候，先调用此依赖项函数，传递合适的参数，依赖函数执行，返回结果再传递给路由函数的参数
+
+---
+
+#### 依赖项函数(有返回值)
+
+```python
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session, sessionmaker
+
+SessionLocal = sessionmaker(...)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        
+@app.get("/test/depends")
+async def test_depends(db: Session = Depends(get_db)):
+    # 使用数据库会话进行数据查询和操作
+    pass
+
+# 注意填写依赖项不需要加上(),只写函数名即可.
+```
+
+---
+
+#### 依赖性函数(无返回值)
+
+有些时候,不需要使用依赖项的返回值,或者依赖项函数没有返回值,那么可以项路径操作装饰器的dependencies参数传入依赖项,而不使用Depends()
+
+```python
+from typing import Optional
+from fastapi import Depends, FastAPI, HTTPException, Header
+
+
+# 1、第一个依赖，验证请求头中的 x_token
+async def verify_token(x_token: str = Header(...)):
+    if x_token != "fake-super-secret-token":
+        # 验证失败，则抛出异常
+        raise HTTPException(status_code=400, detail="X-Token header invalid")
+    # 没有 return
+
+
+# 2、第二个依赖，验证请求头中的 x_key
+async def verify_key(x_key: str = Header(...)):
+    if x_key != "fake-super-secret-key":
+        # 验证失败，则抛出异常
+        raise HTTPException(status_code=400, detail="X-Key header invalid")
+    # 有 return
+    return x_key
+
+
+@app.get("/test/depends",dependencies=[ 
+    Depends(verify_token),
+    Depends(verify_key)])
+async def test_depends():
+    pass
+
+#虽然第二个依赖项有 return 值，但是并不会传递给路径操作函数，所以 return 不 return 没什么区别
+#即使不使用依赖项的 return 值，该依赖项仍然会被调用
+
+```
+
+---
+
+#### 类依赖注入
+
+类声明为依赖项
+
+```python
+from fastapi import FastAPI, Depends, Request
+
+class UserInfo:
+    def __init__(self, request: Request):
+        token = request.headers.get("token")
+        if not token:
+            raise HTTPException(detail="token invalid",status_code=HTTP_401_UNAUTHORIZED)
+        self.user_id = 111
+        self.name = "Mr.how"
+        
+
+@app.get("/test/depends")
+async def test_depends(user_info: UserInfo = Depends(UserInfo)):
+    return {"user_id":user_info.user_id,"name":user_info.name}
+
+# UserInfo是一个类,当该接口被调用时,类对象就会被初始化,返回类实例user_info,然后在路由函数内可以获得对象的相关属性.
+```
+
+> [!NOTE]
+>
+> 类作为依赖项的三种写法
+>
+> user_info: UserInfo = Depends(UserInfo)
+>
+> user_info : UserInfo = Depends()
+>
+> user_info = Depends(UserInfo)
+>
+> 第一种是标准写法,第二种是第一种的缩写.不推荐第三种,因为没有指定类型,IDE没有代码智能提示
+
+---
+
+#### 子依赖项
+
+其实就是嵌套依赖
+
+```python
+from fastapi import FastAPI, Depends
+
+
+def A():
+    return 1
+
+def B(a:int = Depends(A),b:int):
+    return a + b
+
+def C(a:int = Depends(A),c:int):
+    return a * c
+
+def D(b:int = Depends(B),c:int = Depend(C),d:int):
+    return b - c * d
+
+@app.get("/test/depends")
+async def test_depends(d:int = Depends(D, user_cache=True)):
+    pass
+
+# user_cache默认是True,表示当多个依赖有一个共同的子依赖时,每次request请求只会调用子依赖一次,多次调用将从缓存中获取.
+# 先执行第一层依赖，然后第二层，以此类推,最后才会执行路径操作函数
+```
+
+---
+
+全局依赖
+
+在app创建中,` app = FastAPI(dependencies = [Denpends(verify_token)]) `类似中间件的作用.
+
+即发起的所有请求都会先执行全局依赖项，然后再执行对应的路径操作函数
+
+---
+
+#### 带yield的依赖
+
+FastAPI 支持在依赖项返回后执行一些额外的步骤,但需要用 yield 代替 return 来达到这一目的
+
+注意, 确保依赖项中只使用一次 yield
+
+
+
+例子
+
+实际项目中操作数据库
+
+- 连接数据库通常是一个一次性动作，而且是全局前置操作
+- 不会在不同地方用到数据库，都要重新创建一个数据库连接对象
+- 所以创建数据库连接对象可以通过全局依赖项来完成
+- 不再使用数据库连接对象，就得关闭它，不然数据库连接池的连接数就会只增不减，到最后无法再创建连接对象
+
+```python
+
+
+async def get_db():
+    # 1、创建数据库连接对象
+    db = SessionLocal()
+    try:
+        # 2、返回数据库连接对象，注入到路径操作装饰器 / 路径操作函数 / 其他依赖项
+        yield db
+
+　　# 响应传递后执行 yield 后面的代码
+    finally: # 确保后面的代码一定会执行
+
+        # 3、用完之后再关闭
+        db.close()
+
+```
+
+ yield 在数据库场景的作用
+
+- 如果还是用 return，在返回数据库连接对象之后，就无法执行关闭数据库连接对象的操作了，最终导致数据库连接池爆满
+- 这个时候 yield 的作用就出来了，执行完 yield 之后，还会执行 yield 语句后面的代码块
+- 所以返回数据库连接对象，待用完它之后，还能关掉数据库连接对象（通过 finally）
+
+
+
+ 使用 try 的好处
+
+- 可以收到使用依赖项时抛出的任何异常
+- 例如，如果某些代码在中间、另一个依赖项或路径操作中的某个点使数据库事务“回滚”或创建任何其他错误，将在依赖项中收到异常
+- 当然，也可以用 except Exception 来捕获指定的异常
+
+
+
+ 使用 finally 的好处
+
+无论是否有异常，都会执行 finally 里面的代码，保证能关闭数据库连接对象
+
+---
+
 ### FastAPI错误处理
 
 ### 中间件
