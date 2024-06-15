@@ -618,6 +618,8 @@ def Query(
 ```python
 from fastapi import Query
 from typing import Optional,List
+app = FastAPI()
+
 
 @app.get("/test/Query")
 async def test_Query(number:int = Query(...,ge=0,lt=10)):
@@ -684,6 +686,7 @@ def Path(
 ```python
 from fastapi import Path
 from typing import Optional,List
+app = FastAPI()
 
 @app.get("/test/{path_id}")
 async def test_Path(path_id: Optional[str] = Path(..., gt=10,le=20,)):
@@ -702,6 +705,7 @@ FastAPI更推荐使用Pydantic请求体来对传进来的参数进行校验.
 from fastapi import FastAPI
 from typing import Optional
 from pydantic import BaseModel
+app = FastAPI()
 
 # 自定义一个pydantic模型
 class UserInfo(BaseModel):
@@ -789,6 +793,7 @@ class StudentInfo(BaseModel):
 from typing import Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
+app = FastAPI()
 
 # 自定义一个pydantic模型
 class UserInfo(BaseModel):
@@ -850,6 +855,7 @@ def Body(
 ```python
 from fastapi import FastAPI,Body
 from pydantic import BaseModel
+app = FastAPI()
 
 class Item(BaseModel):
     name: str
@@ -896,7 +902,9 @@ Body()中的 embed参数
 当请求体只有一个pydantic模型时,默认是不需要指定字段名的
 
 ```python
+from fastapi import FastAPI
 from pydantic import BaseModel
+app = FastAPI()
 
 class Item(BaseModel):
     name: str
@@ -918,6 +926,7 @@ async def test_Body(item_id:int, item: Item):
 ```python
 from fastapi import FastAPI,Body
 from pydantic import BaseModel
+app = FastAPI()
 
 class Item(BaseModel):
     name: str
@@ -944,6 +953,7 @@ async def test_Body(item_id:int, item: Item = Body(...,embed=True)):
 
 ```python
 from fastapi import FastAPI, Form
+app = FastAPI()
 
 @app.post("/test/Form")
 async def test_Form(username:str = Form(...),password:str = Form(...)):
@@ -959,6 +969,7 @@ async def test_Form(username:str = Form(...),password:str = Form(...)):
 ```python
 from fastapi import FastAPI, File, UploadFile
 from typing import List
+app = FastAPI()
 
 @app.post("/test/file")
 async def test_File(file: bytes = File(...)):
@@ -1053,6 +1064,7 @@ async def test_router():
 ```python
 from fastapi import FastAPI, Cookie
 from fastapi.responses import JSONResponse
+app = FastAPI()
 
 # 读取Cookie
 @app.get("/test/cookie")
@@ -1069,31 +1081,352 @@ async def test_set_cookie():
     return response
 ```
 
+##### 路径操作函数声明 Response 参数来设置 Cookie
+
+```python
+from fastapi import FastAPI, Response
+from fastapi.responses import JSONResponse
+app = FastAPI()
+
+@app.get("/test/cookie")
+async def test_cookie(response: Response): # 路径操作函数声明一个 Response 类型的参数
+    response.set_cookie(key="username",value="Mrhow")
+    return {"code":200,"msg":"success","data":""}
+```
+
+##### 通过 return Response 来设置 Cookie
+
+```python
+from fastapi import FastAPI, Response
+from fastapi.responses import JSONResponse
+app = FastAPI()
+
+@app.get("/test/cookie")
+async def test_cookie(): 
+    response = JSONResponse(content={"name":"Mrhow"})
+    response.set_cookie(key="username",value="Mrhow")
+    return response
+```
+
 ---
 
 #### Header
 
+```python
+from typing import Optional
+from fastapi import FastAPI, Header
+app = FastAPI()
+
+@app.get("/test/header")
+async def test_header(x_token: Optional[str] = Header(...)):
+    pass
+
+# 接受请求头的x-token字段
+# x-token命名是在python无效的,因此Header默认情况下,会用下划线_ 来代替-
+# 另外,Header是不区分大小写的,故而X-TOKEN与x-token没有区别.
 
 
+@app.get("/test/header")
+async def test_header(x_token: Optional[List[str]] = Header(...)):
+    pass
 
+# 如果Request Header里面有多个重名的Header字段,可以使用List[str]进行接受
+
+
+# 设置Response Header
+@app.get("/test/set_header")
+async def test_set_header():
+    response = JSONResponse(content="xxx")
+    token = {
+        "x-token":"token",
+        "user": "mrhow"
+    }
+    response.init_headers(token)
+    return response
+
+```
+
+##### 路径操作函数声明 Response 参数来设置 Header
+
+```python
+from fastapi import FastAPI, Response
+
+app = FastAPI()
+
+
+@app.get("/test/header")
+# 路径操作函数声明一个 Response 类型的参数
+async def test_header(response: Response):
+    response.headers["x-token"] = "token_!@#%#$^$%&"
+    return {"name": "设置 headers"}
+```
+
+##### 通过 return Response 来设置 Header
+
+```python
+from fastapi import FastAPI, Response
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+@app.get("/test/header")
+async def test_header():
+    response = JSONResponse(content={"name": "JSONResponse"})
+    response.headers["x-auth-token"] = "XXX_TOKEN"
+    return response
+```
 
 ---
 
-#### Request对象
+#### Request请求对象
 
 在函数中声明Request类型的参数，FastAPI 就会自动传递 Request 对象给这个参数，我们就可以获取到 Request 对象及其属性信息，例如 header、url、cookie、session 等。
 
 ```python
 from fastapi import FastAPI, Request
+app = FastAPI()
 
-@app.get("/test/request")
-async test_request(request: Request):
-    return {
-        "请求URL": request.url,
-        "请求IP": request.client.host,
-        "请求宿主": request.header.get("user-agent"),
-        "cookies": request.cookies
+@app.get("/test/request/{item_id}")
+async def test_request(request: Request,user_id:int,item_id:int):
+    res = {
+        "host": request.client.host, # 客户端连接的 host
+        "port": request.client.port, # 客户端连接的端口号
+        "method": request.method, # 请求方法
+        "base_url": request.base_url, # 请求路径
+        "headers": request.headers, # request headers
+        "cookies": request.cookies # request cookies
     }
+    return res
+```
+
+```python
+# 请求结果 
+{
+  "host": "127.0.0.1",
+  "port": 64155,
+  "method": "GET",
+  "base_url": {
+    "_url": "http://127.0.0.1:8080/"
+  },
+  "headers": {
+    "host": "127.0.0.1:8080",
+    "connection": "keep-alive",
+    "sec-ch-ua": "\";Not A Brand\";v=\"99\", \"Chromium\";v=\"94\"",
+    "accept": "application/json",
+    "sec-ch-ua-mobile": "?0",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.71 Safari/537.36 Core/1.94.236.400 QQBrowser/12.4.5604.400",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-dest": "empty",
+    "referer": "http://127.0.0.1:8080/Mrhow",
+    "accept-encoding": "gzip, deflate, br",
+    "accept-language": "zh-CN,zh;q=0.9"
+  },
+  "cookies": {}
+}
+```
+
+##### `request.url`对象
+
+```python
+from fastapi import FastAPI, Request
+app = FastAPI()
+
+@app.get("/test/request/{item_id}")
+async def test_request(request: Request,user_id:int,item_id:int):
+    res = {	        
+        "url": request.url,		# 请求 url
+        "components": request.url.components,	  # 总的组成
+        "scheme": request.url.scheme,	# 请求协议
+        "hostname": request.url.hostname,	# 请求 host
+        "url_port": request.url.port,	 # 请求端口
+        "path": request.url.path,	# 请求 path
+        # 请求的查询参数
+        "query": request.url.query,		
+        "fragment": request.url.fragment,
+        "password": request.url.password
+    }
+    return res
+```
+
+```python
+#请求的结果
+
+{
+  "url": {
+    "_url": "http://127.0.0.1:8080/test/request/1111?user_id=2222",
+    "_components": [
+      "http",
+      "127.0.0.1:8080",
+      "/test/request/1111",
+      "user_id=2222",
+      ""
+    ]
+  },
+  "components": [
+    "http",
+    "127.0.0.1:8080",
+    "/test/request/1111",
+    "user_id=2222",
+    ""
+  ],
+  "scheme": "http",
+  "hostname": "127.0.0.1",
+  "url_port": 8080,
+  "path": "/test/request/1111",
+  "query": "user_id=2222",
+  "fragment": "",
+  "password": null
+}
+```
+
+##### 获取路径参数和查询参数
+
+`request.path_params` 与 ` request.query_params`
+
+```python
+from fastapi import FastAPI, Request
+app = FastAPI()
+
+@app.get("/test/request/{item_id}")
+async def test_request(request: Request,user_id:int,item_id:int):
+    res = {	        
+		# 获取路径参数
+        "path_params": request.path_params,
+        "item_id": request.path_params.get("item_id"),
+        # 获取查询参数
+        "query_params": request.query_params,
+        "name": request.query_params["name"]
+    }
+    return res
+```
+
+```python
+# 请求的结果
+{
+  "path_params": {
+    "item_id": "1111"
+  },
+  "item_id": "1111",
+  "query_params": {
+    "user_id": "2222"
+  },
+  "user_id": "2222"
+}
+```
+
+##### 获取表单数据
+
+`request.form()`
+
+```python
+from fastapi import FastAPI, Request
+app = FastAPI()
+
+@app.post("/test/request")
+async def test_request(request: Request, user_id: int = Form(...), item_id: int = Form(...)):
+    res = {
+        # 获取表单数据
+        "form": await request.form()
+    }
+    return res
+```
+
+```python
+# 请求的结果
+{
+  "form": {
+    "user_id": "111",
+    "item_id": "222"
+  }
+}
+```
+
+##### 获取 Request Body
+
+`request.json()` 与 `request.body()`
+
+```python
+from fastapi import FastAPI, Request
+from pydantic import BaseModel
+app = FastAPI()
+
+class Item(BaseModel):
+    item_id: int
+    title: str
+
+@app.post("/test/request")
+async def test_request(request: Request, item: Item):
+    res = {
+        # 获取 Request Body
+        "body": await request.json(),
+        "body_bytes": await request.body()
+    }
+    return res
+```
+
+```python
+# 请求的结果
+{
+  "body": {
+    "item_id": 111,
+    "title": "item_title"
+  },
+  "body_bytes": "{\n  \"item_id\": 111,\n  \"title\": \"item_title\"\n}"
+}
+```
+
+##### 获取文件上传信息
+
+```python
+from fastapi import FastAPI, Request, UploadFile, File
+app = FastAPI()
+
+@app.post("/test/request")
+async def test_request(request: Request, file: UploadFile = File(...)):
+    form_data = await request.form()
+    res = {
+        # 表单数据
+        "form": form_data,
+        # 文件对象 UploadFile
+        "file": form_data.get("file"),
+        # 文件名
+        "filename": form_data.get("file").filename,
+        # 文件类型
+        "content_type": form_data.get("file").content_type,
+        # 文件内容
+        "file_content": await form_data.get("file").read()
+    }
+    return res
+```
+
+```python
+# 请求的结果
+{
+  "form": {
+    "file": {
+      "filename": "test.txt",
+      "file": {},
+      "size": 16,
+      "headers": {
+        "content-disposition": "form-data; name=\"file\"; filename=\"test.txt\"",
+        "content-type": "text/plain"
+      }
+    }
+  },
+  "file": {
+    "filename": "test.txt",
+    "file": {},
+    "size": 16,
+    "headers": {
+      "content-disposition": "form-data; name=\"file\"; filename=\"test.txt\"",
+      "content-type": "text/plain"
+    }
+  },
+  "filename": "test.txt",
+  "content_type": "text/plain",
+  "file_content": "test,test,test\r\n"
+}
 ```
 
 ---
@@ -1112,6 +1445,12 @@ app.mount("/static",StaticFiles(directory=static_dir))
 # 这样就可以通过https://localhost:8080/static 来给前端访问静态资源.
 ```
 
+ 什么是 mount
+
+- “挂载”意味着在特定路径中添加一个完整的“独立”应用程序，然后负责处理所有子路径
+- 这与使用 APIRouter 不同，因为挂载的应用程序是完全独立的
+- 主应用程序中的 OpenAPI 和文档不会包含来自挂载的应用程序的任何内容
+
 ---
 
 #### 响应模型
@@ -1123,6 +1462,7 @@ FastAPI 提供了 response_model 参数，声明 return 响应体的模型. resp
 ```python
 from fastapi import FastAPI
 from pydantic import BaseModel, EmailStr
+app = FastAPI()
 
 class UserIn(BaseModel):
     username: str
@@ -1183,8 +1523,10 @@ response_model_include= {“zzz”}  只显示zzz字段.
 	
 
 ```python
-from fastapi import status
+from fastapi import FastAPI,status
 from http import HTTPStatus
+
+app = FastAPI()
 
 @app.post("/test/status_code/1",status_code=status.HTTP_201_CREATED)
 async def create_item(name:str):
@@ -1209,8 +1551,11 @@ BackgroundTasks是 FastAPI 框架的一个功能，它允许我们在响应已�
 
 ```python
 from fastapi import FastAPI, BackgroundTasks
+app = FastAPI()
 
 def write_notification(email: str,message=""):
+    # 模拟耗时的服务
+    time.sleep(3)
     with open("log.txt",mode="w") as email_file:
         content = f"notification for {email}: {message}"
         email_file.write(content)
@@ -1226,7 +1571,51 @@ async def send_notification(email: str, background_task: BackgroundTasks):
 # 按顺序传递给任务函数的任何参数序列 ,或者传递关键字参数
 ```
 
-阻塞问题:
+---
+
+#### 后台任务结合依赖项
+
+```python
+import time
+from typing import Optional
+from fastapi import FastAPI, BackgroundTasks, Depends
+
+app = FastAPI()
+
+
+# 后台任务函数
+def write_log(message: str):
+    with open("log.txt", mode="a") as log:
+        log.write(message)
+
+
+# 依赖项函数
+async def get_query(
+        background_task: BackgroundTasks,
+        q: Optional[str] = None,
+):
+    # 如果 q 有值才执行后台任务
+    if q:
+        message = f"found query: {q}\n"
+        background_task.add_task(write_log, message)
+
+
+@app.post("/email_depends/{email}")
+async def send_email(
+        email: str,
+        background_task: BackgroundTasks,
+        q: str = Depends(get_query)
+):
+    # 执行一次后台任务
+    message = f"message to {email}\n"
+    background_task.add_task(write_log, message)
+    return {"message": "Message sent"}
+
+```
+
+---
+
+#### 阻塞问题:
 
 有时候我们的后台函数中也可能包含阻塞操作，例如网络请求,因为后台函数里的网络请求阻塞了，会导致整个请求也被阻塞
 
@@ -1256,6 +1645,7 @@ def write_notification(email, message):
 协程: 使用`asyncion`模块
 
 ```python
+
 import asyncio
 
 def write_notification(email, message):
@@ -1266,7 +1656,15 @@ def background_tasks(email,message):
     loop.create_task(write_notification(email,message))
 ```
 
+---
 
+#### BackgroundTasks 注意事项
+
+- 如果需要执行繁重的后台计算，且可能需要多个进程运行（例如，不需要共享内存、变量等），使用其他更大的工具，如：Celery，效果可能会更好
+- 它们往往需要更复杂的配置、消息/作业队列管理器，如 RabbitMQ 或 Redis，它们允许在多个进程中运行后台任务，尤其是在多个服务器中
+- 但是，如果需要从同一个 FastAPI 应用程序访问变量和对象，或者需要执行小型后台任务（例如发送电子邮件通知），只需使用 BackgroundTasks
+
+---
 
 ### 依赖注入
 
@@ -1294,6 +1692,8 @@ def background_tasks(email,message):
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session, sessionmaker
 
+
+app = FastAPI()
 SessionLocal = sessionmaker(...)
 
 def get_db():
@@ -1321,6 +1721,7 @@ async def test_depends(db: Session = Depends(get_db)):
 from typing import Optional
 from fastapi import Depends, FastAPI, HTTPException, Header
 
+app = FastAPI()
 
 # 1、第一个依赖，验证请求头中的 x_token
 async def verify_token(x_token: str = Header(...)):
@@ -1358,6 +1759,7 @@ async def test_depends():
 
 ```python
 from fastapi import FastAPI, Depends, Request
+app = FastAPI()
 
 class UserInfo:
     def __init__(self, request: Request):
@@ -1395,7 +1797,7 @@ async def test_depends(user_info: UserInfo = Depends(UserInfo)):
 
 ```python
 from fastapi import FastAPI, Depends
-
+app = FastAPI()
 
 def A():
     return 1
@@ -1484,14 +1886,427 @@ async def get_db():
 
 ---
 
+### 事件处理
+
+```python
+form fastapi import FastAPI
+app = FastAPI()
+
+# 添加在应用程序启动之前运行的函数
+@app.on_event("startup")
+async def startup_event():
+    print("启动应用程序啦")
+    await init_superuser() # 创建超级管理员
+    
+
+
+# 添加在应用程序关闭时运行的函数
+@app.on_event("shutdown")
+async def shutdown_event():
+    print("关闭应用程序啦")
+    with open("log.txt", mode="a") as log:
+        log.write("Application shutdown")
+```
+
+
+
 ### FastAPI错误处理
+
+#### HTTPException
+
+带有错误的 HTTP 响应（状态码和响应信息）返回给客户端
+
+包含三个参数
+
+- **status_code：**响应状态吗
+- **detail：**报错信息
+- **headers：**响应头
+
+```python
+from fastapi import FastAPI,HTTPException, status
+app = FastAPI()
+
+@app.get("/test/httpexception")
+async def test_httpexception(token:str = Header(...)):
+    if not verify_token(token):
+        raise HTTPException(
+            status_code=401,
+            detail="token invalid",
+            header={"x-error":"error"}
+        )
+    return {"code":200,"msg":"success","data":""}
+
+```
+
+重点
+
+- 可以传递任何可以转换为 JSON 字符串的值给 detail 参数，而不仅仅是 str，可以是 dict、list
+- 它们由 FastAPI 自动处理并转换为 JSON
+
+---
+
+#### 重写HTTPException 异常处理程序
+
+FastAPI 提供了一个装饰器 `@app.exception_handler(exception_type)`，用于定义异常处理器。通过该装饰器，我们可以指定要处理的异常类型，并在异常发生时执行相应的逻辑。
+
+```python
+from fastapi import FastAPI
+# 导入对应的异常类
+from fastapi.exceptions import HTTPException
+from fastapi.responses import PlainTextResponse
+
+app = FastAPI()
+
+# 重写 HTTPException 异常处理程序
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    # 原来是返回 JSONResponse，现在改成返回 PlainTextResponse
+    return PlainTextResponse(content=exc.detail, status_code=exc.status_code)
+
+@app.get("/items2/{item_id}")
+async def read_item(item_id: int):
+    if item_id == 3:
+        # 抛出 HTTPException
+        raise HTTPException(status_code=418, detail="Nope! I don't like 3.")
+    return {"item_id": item_id}
+```
+
+---
+
+#### 自定义异常类
+
+```python
+from fastapi import FastAPI
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
+app = FastAPI()
+
+class DataNotExist(Exception):
+    def __init__(self,msg):
+        self.msg = msg
+        
+def DataNotExistHandle(req: Request, exc: DataNotExist):
+	content = dict(
+    	code = 404,
+        msg = f"DataNotExist  {exc.msg}"
+    )
+    return JSONResponse(content=content,status_code=404)
+
+
+app.add_exception_handler(DataNotExist,DataNotExistHandle)
+
+@app.get("/test/exception")
+async def test_exception(data: str):
+    if data not in datas:
+        raise DataNotExist(f"{data} not exist")
+    return {"code": 200, "msg": "success","data":data}
+```
+
+---
 
 ### 中间件
 
+Fastapi的中间件是一个函数，用于处理每一请求路径操作之前，以及每个响应返回之前工作。
+
+- 中间件会接收应用程序中的每个请求 Request
+- 针对请求 Request 或其他功能，可以自定义代码块
+- 再将请求 Request 传回路径操作函数，由应用程序的其余部分继续处理该请求
+- 路径操作函数处理完后，中间件会获取到应用程序生成的响应 Response
+- 中间件可以针对响应 Response 或其他功能，又可以自定义代码块
+- 最后返回响应 Response 给客户端
+
+
+
+ 中间件和包含 yield 的依赖项、Background task 的执行顺序
+
+- 依赖项 yield 语句前的代码块
+- 中间件
+- 依赖项 yield 语句后的代码块
+- Background task
+
+#### 通过`app.middleware("http")` 装饰器创建中间件
+
+```python
+from fastapi import FastAPI, Request
+
+@app.middleware("http")
+# 必须使用async
+async def MyMiddleware(request: Request, call_next ):
+    # before
+    # 请求前的自定义代码
+    response = await call_next(request) # 调用下一个中间件或路由操作函数
+    
+    # after
+    # 请求后的自定义代码
+    
+    return response
+
+```
+
+ call_next
+
+- 会将 request 传递给相应的路径操作函数
+- 然后会返回路径操作函数产生的响应，赋值给 response
+- 可以在中间件 return 前对 response 进行操作
+
+
+
+#### 通过继承`BaseHTTPMiddleware`创建中间件
+
+```python
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import FastAPI, Request
+app = FastAPI()
+
+class MyMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, header_value: str):
+        super().__init__(app)
+        self.header_value = header_value
+    # dispatch 必须实现
+    
+    async def dispatch(self, request: Request, call_next):
+        # before
+        response = await call_next(request)
+        # after
+        return response
+    
+# 将中间件添加到主程序中
+app.add_middleware(MyMiddleware, header_value=" middleware ")
+# app.add_middleware()操作来引入已定义的中间件，接收两个参数，
+# 第一个参数为中间件的类，第二个参数为要传递给中间件的参数。
+```
+
+> [!NOTE]
+>
+> 多个中间件的处理顺序
+>
+> 例如有两个中间件MyMiddleware1与MyMiddleware2
+>
+> app.add_middleware(MyMiddleware1)
+>
+> app.add_middleware(MyMiddleware2)
+>
+> 那么外层是MyMiddleware2,里层是MyMiddleware1.其顺序是与中间件注册顺序有关,越晚注册就越先执行,同时也是最后收尾执行响应.
+
+#### fastapi已有常用的中间件:
+
+- HTTPSRedirectMiddleware: 将 HTTP 请求重定向到 HTTPS。这个中间件会检查请求的协议，如果是 HTTP，则自动将请求重定向到相应的 HTTPS 地址;
+
+- TrustedHostMiddleware: 强制所有传入请求都具有正确设置的 Host 标头，以防止 HTTP 主机标头攻击。
+
+- GZipMiddleware: 用于在响应中压缩内容，以减小传输大小。这有助于提高应用程序的性能，特别是在处理大量文本或数据时。
+
+- CORSMiddleware: 用于处理跨域资源共享（CORS）请求。CORS 是一种浏览器机制，允许 Web 页面从不同的域请求不同域的资源。(常用)
+
+---
+
 ### 跨域资源共享CORS
+
+当一个资源从与该资源本身所在的服务器不同的域、协议或端口请求一个资源时，资源会发起一个跨域 HTTP 请求。
+
+为什么会出现跨域呢？因为同源策略。
+
+同源策略是浏览器的一个安全功能，不同源的客户端脚本在没有明确授权的情况下，不能读写对方资源。同源策略就是指必须在同一个协议，域名，端口号下，而且三者必须一致的
+
+有哪些是不受同源策略的限制
+
+- 页面上的链接,如<a>链接
+- 重定向
+- 表单提交
+- 跨域资源的引入,比如: script,img,link,iframe
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+
+app.add_middleware(
+	CORSMiddleware,
+	allow_origins=["*"],  #允许发出跨域请求的源列表
+    allow_origin_regex = "*", # 匹配允许发出跨域请求的源
+	allow_credentials=True,  #是否允许携带凭证（例如，使用 HTTP 认证、Cookie 等）.为了允许凭据，allow_origins 不能设置为 ['*']，必须指定 origins
+	allow_methods=["*"], #允许跨域请求的 HTTP 方法,get,post等等
+	allow_headers=["*"],  # 允许的 HTTP 头信息 ,对于 CORS 请求，始终允许 Accept、Accept-Language、Content-Language 和 Content-Type 
+	expose_headers=["*"],  # 允许前端访问的额外响应头
+	max_age=600  # 请求的缓存时间，以秒为单位
+)
+
+# 使用["*"] 表示允许所有
+```
+
+---
+
+### websocket
+
+通过前端框架使用 WebSocket 和后端进行通信
+
+安装 `pip install websockets`
+
+```python
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+app = FastAPI()
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept() # 等待与前端的websocket连接
+    try:
+    	while True:
+        	data = await websocket.receive_text() # 接收发送过来的数据
+            await websocket.send_text(f"Message text was: {data}") # 发送数据
+        except WebSocketDisconnect:
+            # 客户端断开连接
+            pass
+```
+
+
+
+
+
+---
 
 ### 测试用例
 
-### 异步编程
+单元测试,即白盒测试
+
+`pip install pytest`
+
+
+
+```python
+# test_demo.py
+
+from fastapi.testclient import TestClient
+from main import app  # main.py里的主程序app
+
+# 声明一个 TestClient，把 FastAPI() 实例对象传进去
+client = TestClient(app) 
+
+def test_run_task():
+    # 不能使用async def,因为测试用例是按顺序执行
+    # 函数名用test_开头,这是pytest的规范
+    
+    response = client.post(url=””)
+	assert response.status_code == 200
+	assert response.json() == {“message”:”ok”}
+    
+```
+
+```shell
+# 在命令行输入
+pytest test_demo.py
+```
+
+`TestClient` 继承了 `requests`库的`Session`
+
+因此可以像使用 requests 库一样使用 TestClient，拥有 requests 所有方法、属性
+
+---
 
 ### 规范目录结构
+
+```python
+├── app                   # 应用程序目录
+│   ├── api               # API接口目录
+│   │   └── v1            # 版本1的API接口
+│   │       ├── apis      # API相关接口
+│   │       ├── base      # 基础信息接口
+│   │       ├── menus     # 菜单相关接口
+│   │       ├── roles     # 角色相关接口
+│   │       └── users     # 用户相关接口
+│   ├── controllers       # 控制器目录
+│   ├── core              # 核心功能模块
+│   ├── log               # 日志目录
+│   ├── models            # 数据模型目录
+│   ├── schemas           # 数据模式/结构定义
+│   ├── settings          # 配置设置目录
+│   └── utils             # 工具类目录
+├── deploy                # 部署相关目录
+│   └── sample-picture    # 示例图片目录
+└── web                   # 前端网页目录
+    ├── build             # 构建脚本和配置目录
+    │   ├── config        # 构建配置
+    │   ├── plugin        # 构建插件
+    │   └── script        # 构建脚本
+    ├── public            # 公共资源目录
+    │   └── resource      # 公共资源文件
+    ├── settings          # 前端项目配置
+    └── src               # 源代码目录
+        ├── api           # API接口定义
+        ├── assets        # 静态资源目录
+        │   ├── images    # 图片资源
+        │   ├── js        # JavaScript文件
+        │   └── svg       # SVG矢量图文件
+        ├── components    # 组件目录
+        │   ├── common    # 通用组件
+        │   ├── icon      # 图标组件
+        │   ├── page      # 页面组件
+        │   ├── query-bar # 查询栏组件
+        │   └── table     # 表格组件
+        ├── composables   # 可组合式功能块
+        ├── directives    # 指令目录
+        ├── layout        # 布局目录
+        │   └── components # 布局组件
+        ├── router        # 路由目录
+        │   ├── guard     # 路由守卫
+        │   └── routes    # 路由定义
+        ├── store         # 状态管理(pinia)
+        │   └── modules   #  状态模块
+        ├── styles        # 样式文件目录
+        ├── utils         # 工具类目录
+        │   ├── auth      # 认证相关工具
+        │   ├── common    # 通用工具
+        │   ├── http      # 封装axios
+        │   └── storage   # 封装localStorage和sessionStorage
+        └── views         # 视图/页面目录
+            ├── error-page # 错误页面
+            ├── login      # 登录页面
+            ├── profile    # 个人资料页面
+            ├── system     # 系统管理页面
+            └── workbench  # 工作台页面
+
+```
+
+
+
+---
+
+### 其他
+
+#### jsonable_encoder
+
+实际应用场景中，可能需要将数据类型（如：Pydantic 模型）转换为与 JSON 兼容的类型（如：字典、列表）
+
+为此，FastAPI 提供了一个 jsonable_encoder() 函数
+
+jsonable_encoder 实际上是 FastAPI 内部用来转换数据的，但它在许多其他场景中很有用
+
+```python
+from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
+
+# 将pydantic模型转为Dict格式
+
+class Item(BaseModel):
+    title: str
+    timestamp: datetime
+    age: Optional[int] = None
+    
+@app.post("/test/jsonable_encoder")
+async def test_jsonable_encoder(item: Item):
+	json_compatible_item_data = jsonable_encoder(item)
+    title = json_compatible_item_data["title"]
+	return json_compatible_item_data
+```
+
+---
+
+
+
+### 参考资料
+
+1. [小菠萝测试笔记](https://www.cnblogs.com/poloyy)
+2. 
+
