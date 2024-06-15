@@ -2082,9 +2082,9 @@ app.add_middleware(MyMiddleware, header_value=" middleware ")
 >
 > 例如有两个中间件MyMiddleware1与MyMiddleware2
 >
-> app.add_middleware(MyMiddleware1)
+> `app.add_middleware(MyMiddleware1)`
 >
-> app.add_middleware(MyMiddleware2)
+> `app.add_middleware(MyMiddleware2)`
 >
 > 那么外层是MyMiddleware2,里层是MyMiddleware1.其顺序是与中间件注册顺序有关,越晚注册就越先执行,同时也是最后收尾执行响应.
 
@@ -2110,7 +2110,7 @@ app.add_middleware(MyMiddleware, header_value=" middleware ")
 
 有哪些是不受同源策略的限制
 
-- 页面上的链接,如<a>链接
+- 页面上的链接,如`<a>`链接
 - 重定向
 - 表单提交
 - 跨域资源的引入,比如: script,img,link,iframe
