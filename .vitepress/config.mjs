@@ -38,6 +38,7 @@ export default defineConfig({
         {text: 'nginx基础',link: '/后端/nginx/nginx_base'},
         {text: 'Git',link: '/后端/git/git'},
         {text: 'FastAPI',link: '/后端/fastapi/fastapi'},
+        {text: 'Redis基础',link:'/后端/redis/Redis_基础篇'}
       ] },
 
       { text: 'AI', items:[
