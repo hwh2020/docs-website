@@ -40,6 +40,9 @@ export default defineConfig({
         {text: 'FastAPI',link: '/后端/fastapi/fastapi'},
         {text: 'Redis基础',link:'/后端/redis/Redis_基础篇'}
       ] },
+      {text: '爬虫', items:[
+        {text: 'selenium',link: '/后端/selenium/selenium'}
+      ]},
 
       { text: 'AI', items:[
         {text: '神经网络与深度学习',link: '/AI学习/神经网络与深度学习/神经网络与深度学习'},
