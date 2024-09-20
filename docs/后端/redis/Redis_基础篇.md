@@ -2315,7 +2315,7 @@ redis-server /myredis/redis7.conf # 修改配置，记得要重启redis服务
 2) "/myredis/dumpfiles"
 ```
 
-注：RDB 持久化是 Redis 的一种持久化机制，它会在 Redis 数据发生修改时对内存中的数据进行快照，然后保存到磁盘，以保证数据的持久性。通常情况下，RDB 保存快照的时间间隔由配置文件中的参数 save 决定，格式为 save <seconds> <changes>，表示在 <seconds> 秒内，如果数据有 <changes> 次修改，则会进行一次快照。
+注：RDB 持久化是 Redis 的一种持久化机制，它会在 Redis 数据发生修改时对内存中的数据进行快照，然后保存到磁盘，以保证数据的持久性。通常情况下，RDB 保存快照的时间间隔由配置文件中的参数 save 决定，格式为 save < seconds > < changes >，表示在 < seconds > 秒内，如果数据有 < changes > 次修改，则会进行一次快照。
 
 在题目描述的情况下，RDB 设置了每 5 秒进行一次快照，但是如果在 5 秒内修改次数超过了 2 次，也会进行快照。这是因为在 Redis 中，保存快照并不是在规定的时间到达后才进行，而是在修改数据时和时间间隔条件的双重限制下才进行的。
 
@@ -2439,7 +2439,7 @@ redis-cli -a xxxx
 
 配置文件SNAPSHOTTING模块
 
-- `save <seconds> <changes>`：配置快照保存条件
+- `save < seconds > < changes >`：配置快照保存条件
 - dir：配置快照保存目录地址
 - dbfilename：配置快照的文件名
 - stop-writes-on-bgsave-error：![](Redis_base_img/stop-writes-on-bgsave-error.jpg)
@@ -3320,7 +3320,7 @@ sentinel.conf 重点参数
 
 - dir：工作目录
 
-- ==sentinel monitor <master.name> <ip> <redis-port> <quorum>==
+- ==sentinel monitor < master.name > < ip > < redis-port > < quorum >==
 
   设置要监控的master服务器
 
@@ -3330,7 +3330,7 @@ sentinel.conf 重点参数
 
   网络是不可靠的,有时候一个sentinel会因为网络堵塞而误以为master redis已经死掉，在sentinel集群环境下需要多个sentinel互相沟通来确认某个master是否真的死掉了，quorum这个参数是进行客观下线的一个依据，意思是至少有quorum个sentinel认为这个master有故障，才会对这个master进行下线以及故障转移。因为有的时候，某个sentinel节点可能因为自身网络原因，导致无法连接master，而此时master并没有出现故障，所以，这就需要多个sentinel都一致认为改master有问题，才可以进行下一步操作，这就保证了公平性和高可用。
 
-- ==sentinel auth−pass <master-name> <password>==
+- ==sentinel auth−pass < master-name > < password >==
 
   master设置了密码，连接master服务的密码
 
