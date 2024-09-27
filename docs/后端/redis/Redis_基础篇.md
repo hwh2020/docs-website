@@ -2282,7 +2282,7 @@ Redis6.0.16及以下
 
 Redis6.2以及Redis-7.0.0
 
-![](/Redis_base_img/RDB7配置.jpg)
+![](Redis_base_img/RDB7配置.jpg)
 
 
 
