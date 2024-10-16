@@ -433,6 +433,24 @@ async def test_get(id: int,name:str,sex:int):
     return {"code": 200, "msg": "success", "data": datas}
 ```
 
+也可以使用pydantic模型来声明查询参数.
+
+在 GET 请求中，通常不会通过请求体（body）传递数据，而是通过查询参数（query parameters）来传递数据。如果你尝试将一个 Pydantic 模型作为依赖注入到 GET 请求中，FastAPI 会将其视为路径参数或查询参数，而不是请求体中的 JSON 数据。
+
+```python
+from pydantic import BaseModel
+
+class User(BaseModel):
+    name: str
+    phone: str
+   
+@app.get("/test/user")
+def get_user(data: User = Depends()):
+    pass
+```
+
+
+
 ---
 
 #### 参数的类型
@@ -2158,6 +2176,275 @@ async def websocket_endpoint(websocket: WebSocket):
         except WebSocketDisconnect:
             # 客户端断开连接
             pass
+```
+
+---
+
+
+
+### 分页器  pagination
+
+`pip install fastapi-pagination`
+
+
+
+分页有三种模式
+
+- 基于页面的分页
+
+  即 将数据集 按照页面大小 划分为 页面 , 使用` page `和 `size`
+
+- 限制偏移分页
+
+  即 将数据集 按照指定起始点` offset `和 限制数 `limit` 返回数据
+
+- 基于游标的分页
+
+```python
+from fastapi_pagination import Page, paginate, Params, add_pagination
+# Page: Pydantic模型, 用于response_model返回模型 {items: 返回实际数据列表, page: 当前页码, size: 分页大小, total: 记录总数}
+# Params: Pydantic模型, 用于提供分页参数 {page:页数, size: 分页大小}
+# paginate: 用于处理分页逻辑, 将查询结果转化为分页后的数据
+# add_pagination: 用于在 FastAPI 应用中添加分页支持, 应用程序中注册分页中间件
+
+
+from fastapi import FastAPI, Depends
+from pydantic import BaseModel
+
+class User(BaseModel):
+    name: str
+    nickname: str
+
+app = FastAPI()
+@app.get('/test', response_model=Page[User])
+async def get_users(params: Params = Depends()):
+    # 将需要分页的数据进行分页,把params参数传入
+    # 假定 users 是已经通过数据库获取的数据
+    return paginate(users,params)
+
+# 传入的数据格式
+# {
+# 	  page: 1,
+#     size: 10
+# }
+# 返回的数据格式
+# { 
+#     items: [
+#         {"name":xx,"nickname":xx},
+#         ...
+#     ],
+#     "page": 1,
+#     "size": 10,
+#     "total": 100
+# }
+
+# 如果想省略依赖项注入, 则在接口函数之后,使用add_pagination,它会进行默认添加分页依赖项, 是全局
+add_pagination(app)
+
+###################################################################################################
+
+from fastapi_pagination import LimitOffsetPage
+# LimitOffsetPage: 返回模型 {'items': 返回实际数据列表, 'offset': 数据的起始位置, 'limit': 每次请求的数据量, 'total': 记录总数}
+
+@app.get('/test', response_model=LimitOffsetPage[User])
+async def get_users():
+    # 将需要分页的数据进行分页,把params参数传入
+    # 假定 users 是已经通过数据库获取的数据
+    return paginate(users)
+add_pagination(app)
+
+```
+
+> [!NOTE]
+>
+> `paginate`函数用于对内存中已存在的数据进行分页。如果您正在使用数据库或 ORM，则应使用数据库或 ORM 提供的适当方法对数据进行分页。
+
+自定义参数和模型
+
+创建自己的`Params`模型。为此，需要继承 `fastapi_pagination.bases.AbstractParams`并实现`to_raw_params`抽象方法。
+
+实现自己的`Page`模型。此模型应继承自`fastapi_pagination.bases.AbstractPage`。需要实现`create`抽象类方法。
+
+```python
+from fastapi import Query
+from fastapi_pagination.bases import AbstractParams, RawParams
+from fastapi_pagination.links.bases import create_links
+from pydantic import BaseModel
+from typing import Any, Generic, Optional, Sequence, TypeVar
+T = TypeVar("T")
+
+
+class _Params(BaseModel, AbstractParams):
+    page: int = Query(1, ge=1, description='Page number')
+    size: int = Query(20, gt=0, le=100, description='Page size')  # 默认 20 条记录
+
+    def to_raw_params(self) -> RawParams:
+        return RawParams(
+            limit=self.size,
+            offset=self.size * (self.page - 1),
+        )
+
+
+class _Page(AbstractPage[T], Generic[T]):
+    items: Sequence[T]  # 数据
+    total: int  # 总数据数
+    page: int  # 第n页
+    size: int  # 每页数量
+    total_pages: int  # 总页数
+    links: Dict[str, str | None]  # 跳转链接
+
+    __params_type__ = _Params  # 使用自定义的Params
+
+    @classmethod
+    def create(
+        cls,
+        items: Sequence[T],
+        total: int,
+        params: _Params,
+    ) -> _Page[T]:
+        page = params.page
+        size = params.size
+        total_pages = math.ceil(total / params.size)
+        links = create_links(**{
+            'first': {'page': 1, 'size': f'{size}'},
+            'last': {'page': f'{math.ceil(total / params.size)}', 'size': f'{size}'} if total > 0 else None,
+            'next': {'page': f'{page + 1}', 'size': f'{size}'} if (page + 1) <= total_pages else None,
+            'prev': {'page': f'{page - 1}', 'size': f'{size}'} if (page - 1) >= 1 else None,
+        }).model_dump()
+
+        return cls(items=items, total=total, page=params.page, size=params.size, total_pages=total_pages, links=links)
+
+
+```
+
+集成SQLAlchemy使用
+
+```python
+from fastapi_pagination.ext.sqlalchemy import paginate
+class User(BaseModel):
+    email: str
+    password: str
+    is_active: bool
+
+    # 这个配置必须得要
+    class Config:
+        # orm_mode = True
+		from_attributes = True
+        
+@app.get("/test",response_model=Page[User])
+def get_users(db: Session = Depends(get_db)):
+    return paginate(db.query(User))
+
+
+```
+
+整合:
+
+```python
+# pagination.py
+from __future__ import annotations
+import math
+from fastapi import Depends, Query
+from typing import Dict, Generic, Sequence, TypeVar
+from fastapi_pagination import pagination_ctx
+from fastapi_pagination.bases import AbstractPage, AbstractParams, RawParams
+from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi_pagination.links.bases import create_links
+from pydantic import BaseModel
+
+T = TypeVar('T')
+DataT = TypeVar('DataT')
+SchemaT = TypeVar('SchemaT')
+
+
+class _Params(BaseModel, AbstractParams):
+    page: int = Query(1, ge=1, description='Page number')
+    size: int = Query(20, gt=0, le=100, description='Page size')  # 默认 20 条记录
+
+    def to_raw_params(self) -> RawParams:
+        return RawParams(
+            limit=self.size,
+            offset=self.size * (self.page - 1),
+        )
+
+
+class _Page(AbstractPage[T], Generic[T]):
+    items: Sequence[T]  # 数据
+    total: int  # 总数据数
+    page: int  # 第n页
+    size: int  # 每页数量
+    pages: int  # 总页数
+    links: Dict[str, str | None]  # 跳转链接
+
+    __params_type__ = _Params  # 使用自定义的Params
+
+    @classmethod
+    def create(
+        cls,
+        items: Sequence[T],
+        total: int,
+        params: _Params,
+    ) -> _Page[T]:
+        page = params.page
+        size = params.size
+        pages = math.ceil(total / params.size)
+        links = create_links(**{
+            'first': {'page': 1, 'size': f'{size}'},
+            'last': {'page': f'{math.ceil(total / params.size)}', 'size': f'{size}'} if total > 0 else None,
+            'next': {'page': f'{page + 1}', 'size': f'{size}'} if (page + 1) <= pages else None,
+            'prev': {'page': f'{page - 1}', 'size': f'{size}'} if (page - 1) >= 1 else None,
+        }).model_dump()
+
+        return cls(items=items, total=total, page=params.page, size=params.size, pages=pages, links=links)
+
+class _PageData(BaseModel, Generic[DataT]):
+    page_data: DataT | None = None
+
+
+def paging_data(query, page_data_schema: SchemaT) -> dict:
+    """
+    基于 SQLAlchemy 创建分页数据
+
+    :param query: 查询语句 session.query(items).filter(...)
+    :param page_data_schema:
+    :return:
+    """
+    _paginate = paginate(query)
+    page_data = _PageData[_Page[page_data_schema]](page_data=_paginate).model_dump()['page_data']
+    return page_data
+
+
+# 分页依赖注入
+DependsPagination = Depends(pagination_ctx(_Page))
+```
+
+```python
+# test.py
+
+from fastapi import APIRouter
+from app.common.pagination import DependsPagination, paging_data
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class VideoDetails(BaseModel):
+    video_code: str
+    title: str
+    content: str
+    create_time: datetime
+    user_id: int
+
+    class Config:
+        # orm_mode = True
+        from_attributes = True
+        
+@router.get("/test/videos", dependencies=[DependsPagination])
+def get_video(request: Request):
+    session = SessionLocal()
+    query = session.query(Video).filter(Video.isDelete != 1)
+    page_data = paging_data(query, VideoDetails)
+    return CommonResponse(code=200, msg="success", data=page_data)
+
 ```
 
 

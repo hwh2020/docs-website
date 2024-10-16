@@ -362,6 +362,31 @@ tac test.txt
 
 
 
+### head 查看文件开头内容
+
+显示文件的前5行（两种方式）
+
+```shell
+head -n 5 test.txt
+head -5 test.txt
+```
+
+显示文件的前100个字符
+
+```shell
+head -c 100 test.txt
+```
+
+显示文件的第10-20行
+
+```shell
+head -20 test.txt | tail -10
+```
+
+
+
+---
+
 
 
 ### tail 查看文件结尾内容
@@ -694,7 +719,223 @@ wget -b http://51.istester.com/isTester.png
 
 
 
+---
+
+### rm 删除命令
+
+删除`/home/test/`目录下的文件`test.txt `（系统会询问是否删除）
+
+```shell
+rm /home/test/test.txt
+```
+
+ 
+
+强行删除`/home/test/`目录下的文件`test.txt` ( 直接删除，系统不会提示）
+
+```shell
+rm -f /home/test/test.txt
+```
+
+ 
+
+删除`/home/test`目录下的所有.log文件
+
+```shell
+rm -f /home/test/*.log
+```
+
+ 
+
+删除`home/test`目录下的 test_1 文件夹
+
+```shell
+rm -r /home/test/test_1
+```
+
+ 
+
+强行删除`home/test`目录下的 test_1 文件夹
+
+```
+rm -rf /home/test/test_1
+```
+
+ 
+
+删除 home/test 目录下的所有内容
+
+```
+rm -rf /home/test/*
+```
 
 
 
+---
+
+
+
+### nl 显示行号打开文件
+
+显示行号，除了空行
+
+默认就是这个
+
+```shell
+nl test.txt
+nl -b t test.txt
+```
+
+无论是否为空行，都显示行号
+
+```shell
+nl -b a test.txt
+```
+
+行号靠最左显示
+
+```shell
+nl -n ln test.txt
+```
+
+行号靠最右显示
+
+```shell
+nl -n rn test.txt
+```
+
+行号靠最右显示，不足位数左边补0
+
+```shell
+nl -n rz test.txt
+```
+
+
+
+---
+
+
+
+### more 逐页显示文件内容
+
+每次显示5行
+
+```shell
+more -5 test.txt
+```
+
+从第5行开始显示
+
+```shell
+more +5 test.txt
+```
+
+每次翻页时，先清空屏幕内容
+
+```shell
+more -5 -p test.txt
+```
+
+若遇到连续两行以上的空白行，合并为一行空白行
+
+```shell
+more -s test.txt
+```
+
+执行more命令后，常用的操作
+
+向下滚动一屏
+
+```
+z
+空格键
+ctrl+f
+```
+
+向上滚动一屏
+
+```
+b
+ctrl+b
+```
+
+输出文件名和当前行的行号
+
+```
+:f
+```
+
+进入vim编辑器
+
+```
+v 
+```
+
+退出more模式
+
+```
+q 
+```
+
+
+
+---
+
+
+
+### less 查看文件内容
+
+查看文件
+
+```
+less test.txt
+```
+
+ps查看进程并通过less分页显示
+
+```
+ps -ef | less
+```
+
+显示当前行数的百分比
+
+```
+less -m test.txt
+```
+
+显示当前行数/总行数和百分比
+
+```
+less -M test.txt
+```
+
+显示连续空行为一行
+
+```
+less -s test.txt
+```
+
+ 
+
+进入less模式之后的操作
+
+g：移动到第一行
+
+G：移动到最后一行
+
+u：向前移动半屏
+
+d：向后移动半屏
+
+f：向后移动指定行数或一屏
+
+b：向前移动指定行数或一屏
+
+j：向下移动一行
+
+k：向上移动一行
+
+q：结束less模式
+
+---
 
