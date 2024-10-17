@@ -123,7 +123,9 @@ screen 的两种状态： `Attached` 与 `Detach`
 
 screen 语法
 
-`screen [-AmRvx -ls -wipe][-d <会话名称>][-h <行数>][-r <会话名称>][-s ][-S <会话名称>]`
+```shell
+screen [-AmRvx -ls -wipe][-d <会话名称>][-h <行数>][-r <会话名称>][-s ][-S <会话名称>]
+```
 
 
 
