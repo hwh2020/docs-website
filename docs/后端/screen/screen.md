@@ -109,7 +109,15 @@ apt install screen
 
 ### 五、高级应用
 
-screen 的两种状态： `Attached` 与 `Detach` 
+screen 的两种状态： Attached 与 Detach
+
+- Attached（附加）
+
+  当你“附加”到一个screen会话时，意味着你正在与该会话进行交互。你可以看到会话中运行的命令的输出，可以向会话发送输入命令。
+
+- Detach（分离）
+
+  “分离”是指你暂时离开一个screen会话，但会话本身继续在后台运行。这意味着即使你关闭了终端窗口或断开了与远程服务器的连接，screen会话中的进程仍然在运行。
 
 screen 语法
 
