@@ -42,6 +42,7 @@ export default defineConfig({
         {text: 'Git',link: '/后端/git/git'},
         {text: 'FastAPI',link: '/后端/fastapi/fastapi'},
         {text: 'Redis基础',link:'/后端/redis/Redis_基础篇'},
+        {text: 'Docker',link: '/后端/docker/docker'}
         {text: 'Linux',items:[
           {text: 'Linux常用命令',link: '/后端/linux命令/Linux命令'},
           {text: 'Screen',link:'/后端/screen/screen'},
