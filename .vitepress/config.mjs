@@ -11,6 +11,10 @@ export default defineConfig({
     outlineTitle : "目录", //目录索引
     outline: [2,6], //2级标题到6级标题
     logo: '/logo.png',
+    docFooter: {
+      prev: "上一页",
+      next: "下一页",
+    },
     search: {
       provider:'local',
       options:{
@@ -33,7 +37,6 @@ export default defineConfig({
   },
     nav: [
       { text: 'Home', link: '/' },
-
       { text: 'backend', items:[
         {text: 'nginx基础',link: '/后端/nginx/nginx_base'},
         {text: 'Git',link: '/后端/git/git'},
@@ -42,8 +45,8 @@ export default defineConfig({
         {text: 'Linux',items:[
           {text: 'Linux常用命令',link: '/后端/linux命令/Linux命令'},
           {text: 'Linux终端复用与管理', items:[
-            {text: 'Screen',link:'/后端/screen/screen'},
-            {text: 'Tmux',link:'后端/tmux/tmux'}
+            {text: 'Screen',link:'/后端/screen/screen.md'},
+            {text: 'Tmux',link:'/后端/tmux/tmux.md'}
           ]}
         ]}
       ] },
