@@ -44,10 +44,8 @@ export default defineConfig({
         {text: 'Redis基础',link:'/后端/redis/Redis_基础篇'},
         {text: 'Linux',items:[
           {text: 'Linux常用命令',link: '/后端/linux命令/Linux命令'},
-          {text: 'Linux终端复用与管理', items:[
-            {text: 'Screen',link:'/后端/screen/screen.md'},
-            {text: 'Tmux',link:'/后端/tmux/tmux.md'}
-          ]}
+          {text: 'Screen',link:'/后端/screen/screen'},
+          {text: 'Tmux',link:'/后端/tmux/tmux'}
         ]}
       ] },
       {text: '爬虫', items:[
