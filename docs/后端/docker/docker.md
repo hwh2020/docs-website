@@ -397,9 +397,228 @@ docker network rm mynet
 
 
 
+#### Docker Compose
+
+批量管理容器
+
+首先创建一个 `yaml` 文件，将启动所有容器的配置写入该文件里面，那么就可以使用docker compose 批量地操作这些容器。
+
+官方指导手册：[DockerCompose](https://docs.docker.com/reference/)
 
 
-### 小技巧
+
+上线： 将 `yaml` 配置的应用批量地上线，即第一次创建并启动
+
+```shell
+docker compose up -d  # -d 后台执行 默认的yaml文件是 compose.yaml
+docker compose up -f xxx.yaml -d # 指定 yaml文件启动
+```
+
+下线： 将 `yaml` 配置的应用批量地下线，即移除创建这些容器及相关的资源
+
+```shell
+docker compose down
+```
+
+启动： 指定 `yaml` 配置的特定应用进行启动， 启动是之前已经启动过的
+
+```shell
+docker compose start x1 x2 x3 # x1 x2 x3是 yaml文件 配置的 应用名
+```
+
+停止： 同理有启动就有停止
+
+```docker
+docker compose stop x1 x3
+```
+
+扩容： 对 `yaml` 文件配置的应用启动多份。
+
+```shell
+docker compose sacle x2=3 # 将x2应用启动三份实例
+```
+
+
+
+yaml 文件就是将 容器的 docker run 命令参数转换一下 写入到yaml文件中.
+
+```yaml
+# compose.yaml文件
+name: myblog
+services:
+	mysql:
+		container_name: mysql # 容器名
+		image: mysql:8.0 # mysql 镜像
+		ports:
+			- "3306:3306" # 由于端口映射可能会有多个，所以使用 ‘-’ 代表数组
+		environment: # 环境变量
+			- MYSQL_ROOT_PASSWORD=123456
+			- MYSQL_DATABASE=wordpress
+		volumes: # 卷映射
+			- mysql-data:/var/lib/mysql
+			-/app/myconf:/etc/mysql/conf.d
+		restart: always
+		networks:
+			- blog
+	
+	wordpress:
+		image: wordpress
+		ports:
+			- "8080:80"
+		environment:
+			WORDPRESS_DB_HOST: mysql # environment 也可以使用 K-V 写法, 但是需要统一风格.
+			WORDPRESS_DB_USER: root
+			WORDPRESS_DB_PASSWORD: 123456
+			WORDPRESS_DB_NAME: wordpress
+		volumes:
+			- wordpress:/var/www/html
+		restart: always
+		networks:
+			- blog
+		depends_on:
+			- mysql # 依赖于谁,决定启动顺序, 即先启动mysql,后启动wordpress
+			
+volumes:
+	mysql-data:
+	wordpress:
+	
+networks:
+	blog:
+
+```
+
+ 执行
+
+```shell
+docker compose -f compose.yaml up -d
+```
+
+值得注意的是, 虽然yaml文件 配置的 卷名是 mysql-data, wordpress , 网段名是 blog
+
+但是 创建时, docker 会在这些名字前 加上 前缀 'myblog', 这个'myblog' 是 yaml文件 第一行配置的`name: myblog`
+
+ 另外,如果没有配置容器名, docker会自动起名, 起名规则是` <compose 应用名>-<compose 服务名>-<num>`
+
+例如此处的wordpress 服务. 起的名字为 myblog-wordpress-1 . 这里的num是启动的应用个数.
+
+
+
+#### Dockerfile
+
+构建自定义镜像。在dockerfile里面指定好 基本环境， 软件包， 启动命令 即可
+
+官方指导手册：[Dockerfile](https://docs.docker.com/reference/dockerfile/)
+
+dockerfile 常见指令
+
+| 指令       | 作用               |
+| ---------- | ------------------ |
+| FROM       | 指定镜像基础环境   |
+| RUN        | 运行自定义命令     |
+| CMD        | 容器启动命令或参数 |
+| LABEL      | 自定义标签         |
+| EXPOSE     | 指定暴露端口       |
+| ENV        | 环境变量           |
+| ADD        | 添加文件到镜像     |
+| COPY       | 复制文件到镜像     |
+| ENTRYPOINT | 容器固定启动命令   |
+| VOLUME     | 数据卷             |
+| USER       | 指定用户和用户组   |
+| WORKDIR    | 指定默认工作目录   |
+| ARG        | 指定构建参数       |
+
+
+
+##### FROM
+
+指定一个已经存在基础镜像作为模板，dockerfile第一行必须是FROM
+
+##### RUN
+
+容器构建时需要执行的命令， 有两种格式， shell格式与 exec格式
+
+shell格式 ：
+
+```shell
+java -jar ./app.jar
+```
+
+exec格式： ["可执行文件"， "参数1"， "参数2"]
+
+```exec
+["java","-jar","/app.jar"]
+```
+
+##### EXPOSE
+
+当前容器对外暴露出的端口
+
+##### WORKDIR
+
+指定创建容器后，终端默认登录进来的工作目录
+
+##### USER
+
+指定该镜像以什么用户去执行，默认是root
+
+##### ENV
+
+用来构建镜像过程中设置环境变量
+
+##### ADD
+
+将宿主机目录下的文件拷贝进镜像且会自动处理URL和解压tar压缩包
+
+##### COPY
+
+类似ADD， 拷贝文件和目录到镜像中，将从构建上下文目录中<源路径>的文件/目录复制到新的一层镜像内的<目标路径>
+
+##### CMD
+
+指定容器启动后执行的命令， CMD指令格式与RUN相似。
+
+与RUN的区别： CMD是`docker run` 时执行， 而RUN是`docker build`时执行
+
+另外, 如果在 `docker run` 命令后面添加 [commend] 参数后, 会把 dockerfile的CMD执行的命令覆盖掉. 
+
+执行的是docker run 后面的 [commend] 命令
+
+##### ENTRYPOINT
+
+类似于CMD命令, 但是ENTRYPOINT不会被 `docker run`后面的命令覆盖, 而且这些命令行参数会被当作参数送给ENTRYPOINT指令指定的程序.
+
+
+
+
+
+例如：
+
+```dockerfile
+# dockerfile
+FROM openjdk:17
+
+LABEL author=Mrhow
+
+COPY app.jar /app.jar # 将app.jar 复制到镜像中去
+
+EXPOSE 8080
+
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+
+ 写好dockerfile文件后，执行
+
+```shell
+docker build -f Dockerfile -t myjavaapp:v1.0 ./ 
+```
+
+
+
+
+
+
+
+### 四、小技巧
 
 #### 命令替换: 删除容器
 
