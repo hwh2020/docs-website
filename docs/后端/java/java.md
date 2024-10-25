@@ -1697,7 +1697,7 @@ int i = list.get(123); // 自动拆箱, 其实返回的是包装类对象
 >   String str = "98";
 >   int i1 = Integer.parseInt(str);
 >   int i2 = Integer.valueOf(str);
->   
+>     
 >   String str = "98.8";
 >   double d1 = Double.parseDouble(str);
 >   double d2 = Double.valueOf(str);
@@ -1732,7 +1732,7 @@ Map 是双列集合, 每个元素包含两个值.(键值对)
 
 
 
-##### Collection
+##### Collection 集合
 
 集合体系
 
@@ -1851,3 +1851,530 @@ names.forEach(System.out::println);
 
 
 增强for 与 lambda 遍历都没法解决并发修改异常， 结论是增强for 与 lambda 遍历只适合做遍历，不适合做遍历并修改。
+
+
+
+##### List 集合
+
+List 集合的特点是： 有序， 可重复， 有索引
+
+- ArrayList :  有序， 可重复， 有索引
+- LinkedList:  有序， 可重复， 有索引
+
+ArrayList 与 LinkedList 是List 的实现类，它们底层实现不同，适合场景也不同。
+
+
+
+List 相关的方法：
+
+ ![](java_img/List相关方法.png)
+
+```java
+public class ListDemo{
+    public static void main(String[] args){
+        List<String> names = new ArrayList<>();
+        
+        // 插入元素
+        names.add(0,"赵敏");
+        // 删除元素
+        names.remove(0);
+        ...
+    }
+}
+```
+
+List 集合支持的遍历方式：
+
+- for 循环 （因为List集合有索引）
+- 迭代器
+- 增强for循环
+- Lambda 表达式
+
+
+
+ArrayList
+
+ArrayList 底层是基于数组存储数据的
+
+- 查询速度快。（因为是根据数组索引查询快，复杂度是O(1))
+- 增删数据效率低（第一次添加数据，数组扩容到10，后面再加元素则扩容到旧容量的1.5倍）
+
+
+
+LinkedList
+
+LinkedList 底层是基于双链表存储数据的
+
+查询速度慢，增删相对较快， 但对首位元素进行增删改查的速度极快。因此LinkedList 新增了很多首尾操作的特有方法。
+
+ ![](java_img/LinkedList特有方法.png)
+
+LinkedList 应用场景：
+
+- 设计队列，队列只是首尾增删元素
+- 设计栈， 栈只是在首部增删元素
+
+
+
+##### Set 集合
+
+Set系列集合特点：无序：添加数据的顺序和获取出的数据顺序不一致；不重复；无索引；
+
+- HashSet：无序、不重复、无索引。
+- LinkedHashSet：有序、不重复、无索引。
+- TreeSet：排序、不重复、无索引。
+
+Set 集合 常用方法 基本就是 Collection 父接口 提供的， 几乎没有额外新增一些独有的常用方法
+
+
+
+##### HashSet 
+
+java中每个对象都有一个哈希值， 可以调用 Object 类 提供的 `hashCode` 方法，返回该对象自己的哈希值。
+
+对象哈希值特点：
+
+- 同一个对象多次调用 `hashCode` 方法返回的哈希值是相同的
+- 不同的对象，它们的哈希值大概率不相等，但也有可能会相等（哈希碰撞）。
+
+
+
+HashSet 是基于哈希表存储数据的。 在 JDK8 之前， 哈希表 = 数组 + 链表； 在JDK 8 开始 哈希表 = 数组 + 链表 + 红黑树组成。
+
+
+
+在 JDK8 之前， 哈希表 = 数组 + 链表：
+
+ ![](java_img/hashSet底层原理.png)
+
+JDK 8  开始，当链表长度超过 8 ，且数组长度 >= 64 时，自动将链表转成 红黑树。
+
+自定义 HashSet 集合去重 操作
+
+- 定义学生类，创建HashSet集合对象，创建学生对象
+- 把学生添加到集合
+- 在学生类中重写两个方法，hashCode() 和 equals() ，自动生成即可。
+
+
+
+##### LinkedHashSet
+
+它依然是基于哈希表（数组，链表，红黑树）实现的
+
+但是，它的每个元素都额外的多一个双链表机制记录它前后元素的位置。
+
+ ![](java_img/LinkedHashSet底层原理.png)
+
+
+
+##### TreeSet
+
+底层是基于红黑树实现的排序。
+
+注意：
+
+- 对于数值类型：Integer，Double，默认按照数值本身的大小进行升序排序。
+- 对于字符串类型：默认按照首字符的编号升序排序。
+- 对于自定义类型如Student对象，TreeSet默认是无法直接排序的。
+
+对于自定义类型如Student对象，TreeSet默认是无法直接排序的。 解决方案：
+
+方案一：对象类 实现一个Comparable比较接口，重写compare方法，指定大小比较规则。
+
+方案二：public TreeSet集合自带比较器Comparator对象，指定比较规则
+
+
+
+方案一：
+
+```java
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Teacher implements Comparable<Teacher>{
+    private String name;
+    private int age;
+    private double salary;
+    
+    
+    // t2.compareTo(t1)
+    // t2 == this, t1 == o
+    // 如果左边大于右边 返回正整数，左边小于右边，返回负整数，相同返回0
+    @Override
+    public int compareTo(Teacher o){
+        return this.getAge() - o.getAge(); // 升序
+    }
+}
+
+
+public class SetDemo{
+    public static void main(String[] args){
+        Set<Teacher> teachers = new TreeSet<>();
+        
+    }
+}
+```
+
+方案二：
+
+```java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Teacher implements Comparable<Teacher>{
+    private String name;
+    private int age;
+    private double salary;
+    
+}
+
+
+public class SetDemo{
+    public static void main(String[] args){
+        Set<Teacher> teachers = new TreeSet<>( new Comparator<Teacher>(){
+            @Override
+            public int compare(Teacher o1,Teacher o2) {
+                return o2.getAge() - o1.getAge(); // 降序
+            }
+        });
+        
+         Set<Teacher> teachers = new TreeSet<>((o1, o2) -> o2.getAge() - o1.getAge());
+    }
+}
+```
+
+
+
+##### Map 集合
+
+  ![](java_img/Map集合体系.png)
+
+Map / HashMap 特点
+
+- 无序，不重复，无索引
+- 键值对都可以为null
+
+LinkedHashMap 特点
+
+- 有序，不重复，无索引
+- 键值对都可以为null
+
+TreeMap 特点：
+
+- 按照键可排序，不重复，无索引
+
+
+
+Map 常用方法：
+
+ ![](java_img/Map常用方法.png)
+
+
+
+Map 遍历方式
+
+- 键找值 先获取Map集合全部的键，再通过遍历键来找值。
+
+  ` public Set<K> keySet() 获取所有键的集合`
+
+  `public V get(Object key) 根据键获取对应的值`
+
+  ```java
+  public class MapTraverseDemo{
+      public static void main(String[] args){
+          Map<String,Integer> map = new HashMap<>();
+          
+          Set<String> keys = map.keySet();
+          
+          for (String key: keys){
+              Integer value = map.get(key);
+              ...
+          }
+      }
+  }
+  ```
+
+- 键值对 把键值对看成一个整体进行遍历
+
+  Map 提供了一个方法 `Set<Map.Entry<K,V>> entrySet()` 用于获取所有“键值对”的对象。
+
+  ```java
+  public class MapTraverseDemo{
+      public static void main(String[] args){
+          Map<String,Integer> map = new HashMap<>();
+          
+          Set< Map.Entry<String,Double> entries = map.entrySet();
+          
+          for (Map.Entry<String,Double> entry : entries) {
+              String key = entry.getKey();
+              double value = entry.getValue();
+          }
+       
+      }
+  }
+  ```
+
+- Lambda 遍历
+
+  需要Map 提供的方法：`default void forEach(BiConsumer<? super K,? super V> action)`
+
+  ```java
+  public class MapTraverseDemo{
+      public static void main(String[] args){
+          Map<String,Integer> map = new HashMap<>();
+          
+          map.forEach(new BiConsumer<String,Integer>(){
+             @Override
+              public void accept(String s,Integer integer){
+                  System.out.println(s + "=" + integer);
+              }
+          });
+          
+          // lambda 简化
+          map.forEach((k,v) -> System.out.println(k + "=" + v));
+       
+      }
+  }
+  ```
+
+
+
+HashMap 集合
+
+实际上HashSet 集合底层 是使用 HashMap集合，只是不需要value这个值，只需要 key。
+
+```java
+// HashSet 源码
+...
+// HashSet 构造器
+public HashSet() {
+    map = new HashMap<>();
+}
+```
+
+那也就是HashMap跟HashSet底层原理一模一样，都是基于哈希表实现。
+
+
+
+LinkedHashMay 集合
+
+它的底层原理就是 LinkedHashSet 集合的底层原理.
+
+
+
+
+
+#### Stream 流
+
+Stream 流 是 JDK8 开始 新增的 一系列API, 可以用于操作集合 或 数组的数据
+
+Stream 流 大量结合 Lambda 语法风格 编程.
+
+Stram 流是一个接口
+
+```java
+public class StreamDemo{
+    public static void main(String[] args){
+        List<String> list = new ArrayList<>();
+        ...
+        // 需求: 找出姓张的人, 名字为3个字符,存入到新集合中去
+
+        // 1. 传统方法
+        List<String> newList = new ArrayList<>();
+        for (String name: list){
+            if (name.startsWith("张") && name.length() == 3){
+                newList.add(name);
+            }
+        }
+        
+        // 2. 使用Stream流方法
+        List<String> newList1 = list.stream().filter(s -> s.startsWith("张")).filter(s -> s.length() == 3 ).collect(Collectors.toList());
+        
+    }
+}
+```
+
+ ![](java_img/Stream流使用步骤.png)
+
+##### 获取Steam流
+
+获取集合的Stream流
+
+```java
+// 集合封装好了 Stream 流
+// 获取集合的Stream流  Collection 提供的如下方法 获取当前集合对象的Stream 流 实现类对象
+default Stream<E> stream();
+
+// 获取数组的Stream 流, Arrays类提供了如下静态方法,获取当前数组的Stream流
+public static <T> Stream<T> stream(T[] array);
+
+// 使用Stream类提供的如下方法,获取当前接收数据的Stream 流.
+public static<T> Stream<T> of(T...Values);
+
+```
+
+```java
+public class StreamDemo{
+    public static void main(String[] args){
+        // 获取集合的Stream流
+        Collection<String> list = new ArrayList<>();
+        Stream<String> s1 = list.stream();
+        
+        // Map  集合
+        Map<String,Integer> map = new HashMap<>();
+        // 不能 map.stream();只能拆开来,获取键流,值流
+        // 获取键流
+        Stream<String> s2 = map.keySet().stream();
+        // 获取值流
+        Stream<String> s3 = map.values().stream();
+        // 获取键值对流
+        Stream<Map.Entry<String,Integer>> s4 = map.entrySet().stream();
+        
+        //  获取数组的Stream 流
+        
+        String[] names = {"a","b","c"};
+        Stream<String> s5 = Arrays.stream(names);
+        
+        //  使用Stream类提供的方法
+        Stream<String> s6 = Stream.of(names)
+    }
+}
+```
+
+
+
+##### Stream 流 常用中间方法
+
+ ![](java_img/Stream流中间方法.png)
+
+```java
+public class StreamDemo{
+    public static void main(String[] args){
+        List<String> list = new ArrayList<>();
+        
+        // 过滤方法
+        list.stream().filter(s -> s.startsWith("张") && s.length() == 3).forEach(System.out::println);
+        
+        // 排序方法
+        List<Double> scores = new ArrayList<>();
+        scores.stream().sorted().forEach(System.out::println); // 默认是升序
+        
+        scores.stream().sorted((s1,s2) -> Double.compare(s2,s1)).forEach(System.out::println); // 降序
+        // limit
+        scores.stream().sorted((s1,s2) -> Double.compare(s2,s1)).limit(2).forEach(System.out::println); // 降序后只需前2名
+        // skip
+        scores.stream().sorted((s1,s2) -> Double.compare(s2,s1)).skip(2).forEach(System.out::println); // 降序后跳过前2名           // 去重
+        scores.stream().sorted((s1,s2) -> Double.compare(s2,s1)).distinct().forEach(System.out::println);
+        // 如果希望自定义对象能够去重，要重写对象的hashCode和equals的方法。才可以去重
+        
+        // 映射/加工方法， 把流上原来的数据取出来，变成新数据在放回去。
+        scores.stream().map(s -> "加10分后：" + (s + 10)).forEach(System.ou::println);
+        
+        // 合并流
+        Stream<String> s1 = Stream.of("张三丰","张无忌","张学友");
+        Stream<Integer> s2 = Stream.of(11,22,33);
+        
+        Stream<Object> s3 = Stream.concat(s1,s2);
+        
+    }
+}
+```
+
+
+
+##### Steam 流 终结方法
+
+终结方法是指调用完后，不会返回新的Stream流了，没法继续使用流。
+
+![](java_img/Stream终结方法.png)
+
+```java
+public class StreamDemo{
+    public static void main(String[] args){
+        List<Teacher> teachers = new ArrayList<>();
+        ...
+        
+        // forEach
+        teachers.stream().filter(t -> t.getSalary() > 150000).forEach(System.out::println);
+        
+        // count
+        long count = teachers.stream().filter(t-> t.getSalary() > 150000).count();
+        
+        // max
+        Optional<Teacher> max = teachers.stream().max((t1,t2) -> Double.compare(t1.getSalary(),t2.getSalary()));
+        Teacher maxTeacher = max.get();
+        
+        // 同理 min
+        
+    }
+}
+```
+
+##### 收集Stream 流
+
+将Stream 流操作后的结果 转回到 集合 或者 数组中去。
+
+ ![](java_img/Stream收集方法.png)
+
+```java
+public class StreamDemo{
+    public static void main(String[] args){
+        List<String> list = new ArrayList<>();
+        ...
+            
+        Stream<String> s1 = list.stream().filter(s -> s.startsWith("张"));
+        // 收集到List集合中
+        List<String> list1 = s1.collect(Collectors.toList());
+        
+        // 收集到Set集合中
+        Set<String> set1 = s1.collect(Collectors.toSet());
+        
+        // 收集到数组中
+        Object[] array = s1.toArray();
+        
+        // 收集到Map集合
+        Map<String,Double> map = teachers.stream().collect(Collectors.toMap(Teacher::getName,Teacher::getSalary));
+    }
+}
+```
+
+
+
+#### File
+
+File是java.io 包 下的类， File 类的对象是用于代表当前操作系统的文件（可以是文件，文件夹）
+
+==File类只能对文件本身进行操作，不能读写文件里面存储的数据==
+
+ ![](java_img/File介绍.png)
+
+File常用方法
+
+ ![](java_img/File常用方法.png)
+
+```java
+public class FileDemo{
+    public static void main(String[] args){
+        // 也可以使用相对路径，相对于java工程目录下。
+        File f1 = new File("E:/resource/img.jpg");
+        System.out.println(f1.length()); // 字节个数
+        
+        // 创建对象代表不存在的文件路径
+        File f2 = new File("./test.txt");
+        f2.createNewFile(); // 把这个文件创建出来
+        
+        // 创建对象代表不存在的文件夹路径
+        File f3 = new File("./test");
+        f3.mkdir(); // mkdir 只能创建一级文件夹
+        f3.mkdirs(); // mkdirs 可以创建多级文件夹
+        
+        // 删除文件
+        File f4 = new File("./test.txt");
+        f4.delete(); // delete 如果删除文件夹，那只能删除空的文件夹。想删除非空文件夹，只能递归删除里面的文件，然后删除文件夹
+        
+        
+    }
+}
+```
+
