@@ -1697,7 +1697,7 @@ int i = list.get(123); // 自动拆箱, 其实返回的是包装类对象
 >   String str = "98";
 >   int i1 = Integer.parseInt(str);
 >   int i2 = Integer.valueOf(str);
->     
+>             
 >   String str = "98.8";
 >   double d1 = Double.parseDouble(str);
 >   double d2 = Double.valueOf(str);
@@ -2373,8 +2373,673 @@ public class FileDemo{
         File f4 = new File("./test.txt");
         f4.delete(); // delete 如果删除文件夹，那只能删除空的文件夹。想删除非空文件夹，只能递归删除里面的文件，然后删除文件夹
         
+        // 获取当前目录下的一级文件名称
+        File f5 = new File("./test");
+        String[] names = f5.list();
+        
+        // 获取当前目录下的一级文件对象
+        File[] files = f5.listFiles();
+        for (File file : files){
+            System.out.println(file.getAbsoluteFile()); // 获取绝对路径
+        }
         
     }
 }
 ```
 
+ ![](java_img/listFiles注意事项.png)
+
+
+
+#### IO 流
+
+##### 字节流
+
+文件字节输入流 (FileInputStream) : 以内存为基准， 可以把磁盘文件中的数据以字节的形式读到内存中去。
+
+![](java_img/文件字节输入流.png)
+
+```java
+public class FileInputStreamDemo {
+    public static void main(String[] args) throws Exception {
+        InputStream fileIn = new FileInputStream("./test.txt");
+        byte[] buffer = new byte[3];
+        int len;
+        while ((len = fileIn.read(buffer)) ! = -1) {
+            String str = new String(buffer);
+            System.out.print(str);
+        }
+    }
+}
+```
+
+文件字节输出流 (FileOutputStream) : 以内存为基准，把内存中的数据以字节的形式写到文件中去。
+
+```java
+OutputStream os = new FileOutputStream("./test.txt");
+os.write(97); // 写入一个字节数据
+os.write("b"); // 写入一个字符数据
+
+byte[] bytes = "你好".getBytes();
+os.write(bytes); // 写入一个字节数组进去
+
+os.close(); // 用完需要关闭。
+```
+
+
+
+##### 字符流
+
+文件字符输入流 ![](java_img/FileReader文件字符输入流.png)
+
+文件字符输出流
+
+ ![](java_img/FileWriter文件字符输出流.png)
+
+ ![](java_img/字符输出流注意事项.png)
+
+
+
+##### 缓冲流
+
+ ![](java_img/缓冲流.png)
+
+缓存字节输入流
+
+ ![](java_img/缓存字节输入流.png)
+
+```java
+InputStream fis = new FileInputStream(srcPath);
+InputStream bis = new BufferedInputStream(fis);
+
+OutputStream fos = new FileOutputStream(destPath);
+OutputStream bos = new BufferedOutputStream(fos);
+```
+
+缓冲字符输入流
+
+ ![](java_img/缓冲字符输入流.png)
+
+```java
+Reader fr = new FileReader("./test.txt");
+BufferedReader br = new BufferedReader(fr);
+String line;
+while ((line = br.readLine()) != null){
+    System.out.println(line);
+}
+
+```
+
+
+
+
+
+##### 其他流
+
+字符输入转换流 (InputStreamReader) : 解决不同编码时，字符流读取文本内容乱码问题。
+
+ ![](java_img/字符输入转换流.png)
+
+```java
+InputStream is = new FileInputStream("./test.txt");
+Reader isr = new InputStreamReader(is,"GBK");
+BufferedReader br = new BufferedReader(isr);
+```
+
+
+
+打印流 (PrintStream / PrintWriter) ：打印流可以实现更方便、更高效的打印数据，实现打印啥出去就是啥出去。
+
+ ![](java_img/打印流.png)
+
+```java
+public static void main(String[] args){
+    try(
+    	// PrintStream ps = new PrintStream("./test.txt"); // 字节流
+       	// PrintWriter ps = new PrintWriter("./test.txt"); // 字符流
+        PrintStream ps = new PrintStream(new FileOutputStream("./test.txt",true)); // 追加模式
+    ){
+        ps.println(97);
+        ps.println('a');
+        ps.println(true);
+       
+    }catch (Exception e){
+        e.printstactTrace();
+    }
+}
+```
+
+
+
+特殊数据流
+
+DataInputStream (数据输出流) 允许把数据和其类型一并写出去
+
+ ![](java_img/特殊数据输出流.png)
+
+```java
+public static void main(String[] args){
+    try(
+    	DataOutputStream dos = new DataOutputStream(new FileOutputStream("./test.txt"));
+    ){
+        dos.writeByte(34);
+        dos.writeUTF("你好");
+        dos.writeInt(123);
+        dos.writeDouble(9.9);
+    }catch  (Exception e){
+        e.printStackTrace();
+    }
+}
+```
+
+DataInputStream 特殊数据输入流
+
+```java
+public static void main(String[] args){
+    try(
+    	DataInputStream dos = new DataInputStream(new FileInputStream("./test.txt"));
+    ){
+        System.out.println(dos.readByte());
+        System.out.println(dos.readUTF());
+        System.out.println(dos.readInt());
+        System.out.println(dos.readDouble());
+    }catch  (Exception e){
+        e.printStackTrace();
+    }
+}
+```
+
+
+
+##### IO 框架
+
+封装好了java对文件，数据进行操作的代码框架
+
+导入IO框架 ： commons-io-2.16.1.jar
+
+- 在项目中创建一个文件夹：lib
+- 将commons-io-2.16.jar 文件复制到lib文件中。
+- 在jar文件右键，选中 Add as Library
+- 在类中导包使用
+
+ ![](java_img/commons-io.png)
+
+ ```java
+ import org.apache.commons.io.FileUtils;
+ 
+ public class CommonsIoDemo{
+     public static void main(String[] args){
+         FileUtils.copyFile(new File("./src.txt"),new File("./dest.txt"));
+     }
+ }
+ ```
+
+
+
+#### 多线程
+
+##### 创建多线程
+
+- #### 继承Thread类
+
+  ```java
+  class MyThread extends Thread {
+      // 重写Thread 类的run方法
+      @Override
+      public void run(){
+          // 在run 方法编写线程的任务代码
+          ...
+      }
+  }
+  public class Test{
+      // main方法本身是由一条主线程负责执行
+      public static void main(String[] args){
+          Thread t1 = new MyThread();
+          t1.start();
+      }
+  }
+  
+  ```
+
+  优点: 编码简单
+
+  缺点: 线程类已经继承了Thread,无法继承其他类,不利于功能扩展.
+
+  注意事项:
+
+  - 直接调用run方法会被当成普通方法执行,也就是还是单线程执行
+
+  - 只有调用strat方法才是启动一个新的线程执行.
+
+    
+
+- #### 实现Runnable接口的类
+
+  ```java
+  class MyRunnable implements Runnable {
+      // 重写run方法， 设置线程任务
+      @Override
+      public void run(){
+          // 在run 方法编写线程的任务代码
+          ...
+      }
+  }
+  
+  public class Test{
+     
+      public static void main(String[] args){
+          Runnable r = new MyRunnable();
+          Thread t = new Thread(r);
+          t.start();
+      }
+  }
+  ```
+
+  优点: 任务类只是实现接口，可以继续继承其他类，实现其他接口，扩展性强
+
+  缺点: 需要多一个Runnable对象。如果线程有执行结果是不能直接返回的。
+
+   
+
+  匿名内部类的写法：
+
+  - 可以创建Runnable 匿名内部类对象
+  - 再交给Thread线程对象
+  - 调用线程对象的start() 启动线程
+
+  
+
+- #### 实现Callable接口，FutureTask类
+
+  前两种创建线程的方式都存在一个问题：假如线程执行完毕后有一些数据需要返回，它们重写的run方法均不能直接返回结果。
+
+  而使用 Callable 接口 和 FutureTask 类可以解决上述问题。
+
+  - 创建任务对象
+
+    定义一个类 实现Callable接口， 重写 call方法， 封装 线程任务代码和要返回的数据
+
+    把Callable 类型对象封装成 FutureTask对象 (线程任务对象)
+
+  - 把线程任务对象交给Thread 对象。
+
+  - 调用Thread对象的start 方法启动线程
+
+  - 线程执行完毕后，通过FutureTask对象的get方法获取线程任务执行完毕后的结果。
+
+  ```java
+  class MyCallable implements Callable<String> {
+      public String call() throws Exception {
+          // 编写线程的任务代码
+          return "子线程执行完毕，返回数据";
+      }
+  }
+  public class Test{
+     
+      public static void main(String[] args){
+          Callable<String> c1 = new MyCallable();
+          FutureTask<String> f1 = new FutureTask<>(c1);
+          Thread t1 = new Thread(f1);
+          t1.start();
+          
+          try {
+              // 如果主线程执行到此处， 发现子线程还未执行完毕，会让出cpu，等待子线程执行完返回数据。
+              System.out.println(f1.get());
+          } catch (Exception e){
+              e.printStackTrace();
+          }
+      }
+  }
+  ```
+
+  
+
+##### 线程的常用方法
+
+ ![](java_img/Thread常用方法.png)
+
+
+
+##### 线程同步
+
+线程安全问题 即多个线程竞争同一个共享资源的问题
+
+线程同步是线程安全问题的解决方案，其核心思想是让多个线程先后依次访问共享资源。
+
+加锁，每次只允许一个线程加锁，加锁后才能进行访问，访问完后自动解锁，然后才允许其他进程加锁。
+
+加锁方法：
+
+- #### 同步方法块
+
+   ![](java_img/同步代码块.png)
+
+  ```java
+  public class A {
+      public void function(){
+          ...
+          synchronized(this){
+              // 需要同步的代码块
+              ...
+          }
+      }
+  }
+  ```
+
+  锁对象建议使用共享资源作为锁对象，对于实例方法建议使用 this 作为锁对象。
+
+  对于静态方法建议使用 字节码 (类名.class) 对象作为锁对象。
+
+  
+
+- #### 同步方法
+
+   ![](java_img/同步方法.png)
+
+  ```java
+  public class A{
+      public synchronized void function(){
+          ...
+      }
+  }
+  ```
+
+- #### Lock 锁
+
+   ![](java_img/Lock锁.png)
+
+  ```java
+  public class A {
+      private final Lock lk = new ReentrantLock(); // final保护锁
+      public void function() {
+          ...
+          lk.lock(); // 上锁
+          try {
+              ...
+          } finally {
+              lk.unlock(); //解锁
+          }
+      }
+  }
+  ```
+
+
+
+##### 线程池
+
+线程池是一种复用线程的技术。
+
+ ![](java_img/创建线程池.png)
+
+方法一： 通过 ThreadPoolExecutor 创建线程池
+
+```java
+public ThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory, RejectedExecutionHandler handler)
+```
+
+- 参数一：corePoolSize  指定线程池的核心线程的数量
+
+  相当于 "正式工"
+
+- 参数二：maximumPoolSize  指定线程池最大线程的数量
+
+  最大员工数是 5 个， 正式工为3个， 临时员工为2个
+
+- 参数三：keepAliveTime  指定临时线程的存活时间
+
+- 参数四：unit  指定临时线程存活的时间单位
+
+- 参数五：workQueue  指定线程池的任务队列
+
+- 参数六：threadFactory  指定线程池的线程工厂
+
+  相当于 招聘员工的 hr
+
+- 参数七：handler  指定线程池的任务拒绝策略
+
+  线程都在忙碌的情况
+
+```java
+public class ExecutorServiceDemo {
+    public static void main(String[] args){
+        ExecutorService pool = new ThreadPoolExecutor(3,5,10,TimeUnit.SECONDS, new ArrayBlockingQueue<>(3), Executors.defaultThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
+        
+        
+    }
+}
+```
+
+
+
+ExecutorService 常用方法
+
+ ![](java_img/ExecutorService常用方法.png)
+
+```java
+public class ExecutorServiceDemo {
+    public static void main(String[] args){
+        ExecutorService pool = new ThreadPoolExecutor(3,5,10,TimeUnit.SECONDS, new ArrayBlockingQueue<>(3), Executors.defaultThreadFactory(), new ThreadPoolExecutor.AbortPolicy());
+        
+        // 处理 Runnable 任务
+        Runnable target = new MyRunnable();
+        pool.execute(target); // 提交第一个任务，创建第一个线程，自动启动线程处理这个任务
+        pool.execute(target); // 提交第二个任务，创建第二个线程，自动启动线程处理这个任务
+        
+        // 处理 Callable 任务
+        Future<String> f1 = pooll.submit(new MyCallable()); // 提交第一个任务
+        Future<String> f2 = pooll.submit(new MyCallable()); // 提交第二个任务
+        
+        try {
+            System.out.println(f1.get());
+            System.out.println(f2.get());
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        
+        pool.shutdown(); //关闭线程池，但一般不关闭线程池，关闭后，线程池不再接收新的任务，但会继续执行已经提交的任务。
+        
+        pool.shutdownNow(); // 立即关闭，不过任务是否执行完毕
+    }
+}
+```
+
+线程池注意事项：
+
+- 新任务提交时发现核心线程都在忙，任务队列也满了，并且还可以创建临时线程，此时才会创建临时进程。
+
+- 核心线程和临时线程都在忙，且任务队列也满了，此时拒绝新的任务进来。
+
+   ![](java_img/任务拒绝策略.png)
+
+
+
+方案二 ： 通过 Executors 创建
+
+ ![](java_img/Executors创建线程池.png)
+
+```java
+public class ExecutorsDemo{
+    public static void main(String[] args){
+        ExecutorService pool = Executors.newFixedThreadPool(3);
+        // 线程池的方法跟上面是一样的，只是获取线程池的方法不同,
+        // 实际上 都是通过类 ThreadPoolExecutor创建的线程池对象
+        
+        // 处理 Runnable 任务
+        Runnable target = new MyRunnable();
+        pool.execute(target); // 提交第一个任务，创建第一个线程，自动启动线程处理这个任务
+        pool.execute(target); // 提交第二个任务，创建第二个线程，自动启动线程处理这个任务
+        
+        // 处理 Callable 任务
+        Future<String> f1 = pooll.submit(new MyCallable()); // 提交第一个任务
+        Future<String> f2 = pooll.submit(new MyCallable()); // 提交第二个任务
+        
+        try {
+            System.out.println(f1.get());
+            System.out.println(f2.get());
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+        
+        pool.shutdown(); //关闭线程池，但一般不关闭线程池，关闭后，线程池不再接收新的任务，但会继续执行已经提交的任务。
+        
+        pool.shutdownNow(); // 立即关闭，不过任务是否执行完毕
+    }
+}
+```
+
+Executors 使用存在的陷阱
+
+ ![](java_img/Executors使用可能存在的陷阱.png)
+
+
+
+#### 网络通信
+
+基本的通信架构有两种：CS架构(Client客户端 / Server 服务端) 、BS架构(Browser浏览器 / Server 服务器)
+
+##### IP 
+
+InetAddress 
+
+ ![](java_img/InetAddress.png)
+
+```java
+public class InetAddressDemo{
+    public static void main(String[] args){
+        // 获取本机IP对象
+        InetAddress ip1 = InetAddress.getLocalHost();
+        System.out.println(ip1);
+        System.out.println(ip1.getHostName());
+        System.out.println(ip1.getHostAddress());
+        
+        // 获取对方IP对象
+        InetAddress ip2 = InetAddress.getByName("www.baidu.com");
+        System.out.println(ip2);
+        
+        // 判断本机与对方主机是否互通
+        System.out.println(ip2.isReachable(5000));
+    }
+}
+```
+
+
+
+##### UDP通信
+
+ ![](java_img/UDP通信.png)
+
+```java
+// 发送端 (客户端)
+
+public class UDPClientDemo{
+    public static void main(String[] args){
+        // 创建发送端对象
+        DatagramSocket socket = new DatagramSocket();
+        // 创建数据包对象封装要发生的数据
+        
+        byte[] bytes = "Mrhow,hello world".getBytes();
+        /**
+        * 参数一：发生的数据，字节数组
+        * 参数二：发送的字节长度
+        * 参数三：目的地IP地址
+        * 参数四：服务端端口号
+        */
+        DatagramPacket packet = new DatagramPacket(bytes,bytes.length,InetAddress.getByName("192.xx.xx.xx"),8080);
+        
+        socket.send(packet);
+        
+    }
+}
+```
+
+```java
+// 接收端 (服务端)
+
+public class UDPServerDemo{
+    public static void main(String[] args){
+        // 创建接收端对象，注册端口
+        DatagramSocket socket = new DatagramSocket(8080);
+        
+        // 创建数据包对象 接收数据
+        byte[] buf = new byte[1024*64];
+        DatagramPacket = packet = new DatagramPacket(buf,buf.length);
+        
+        socket.receive(packet);
+        int len = packet.getLength();
+        String data = new String(buf,0,len);
+        System.out.println("服务端收到了"+ data);
+        
+        // 获取对方IP对象和程序端口
+        String ip = packet.getAddress().getHostAddress();
+        int port = packet.getPort();
+    }
+}
+```
+
+
+
+##### TCP 通信
+
+客户端
+
+ ![](java_img/TCP客户端.png)
+
+```java
+public class ClientDemo{
+    public static void main(String[] args){
+        // Socket 管道对象， 请求与服务端的Socket链接，可靠连接
+		Socket socket = new Socket("127.0.0.1",9999);
+        // 从socket通信管道中得到一个字节输出流
+        OutputStream os = socket.getOutputStream();
+        
+        // 特殊数据流
+        DataOutputStream dos = new DataOutputStream(os);
+        dos.writeInt(1);
+        dos.writeUTF("Mrhow");
+        
+        socket.close();
+    }
+}
+```
+
+服务端
+
+   ![](java_img/TCP服务端.png)
+
+```java
+public class ServerDemo{
+    public static void main(String[] args){
+        // 创建服务端ServerSocket对象，绑定端口号
+        ServerSocket ss = new ServerSocket(9999);
+        // 调用accept方法，阻塞等待客户端连接，一旦有客户端连接会返回一个Socket对象
+        Socket socket = ss.accept();
+        // 获取输入流，读取客户端发送的数据
+        InputStream is = socket.getInputStream();
+        // 因为客户端是使用特殊数据输出流，所以服务端也是使用特殊数据输入流
+        DataInputStream dis = new DataInputStream(is);
+        
+        int id = dis.readInt();
+        String msg = dis.readUTF();
+    }
+}
+```
+
+
+
+#### 反射
+
+加载类，并允许以编程的方式解剖类中的各种成分（成员变量、方法、构造器等）
+
+-  加载类，获取类的字节码： Class对象
+
+  获取Class对象的三种方法
+
+  - class c1 = 类名.class
+  - 调用Class提供方法：public static Class forName(String package);
+  - Object提供的方法：public Class getClass();         Class c3 = 对象.getClass();
+
+   ![](java_img/获取类对象.png)
+
+- 获取类的构造器：Constructor对象
+- 获取类的成员变量：Field对象
+- 获取类的成员方法：Method对象
