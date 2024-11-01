@@ -384,6 +384,8 @@ async def getUser(user_id:int):
 
 # 路径参数user_id.请注意,在路径url中传递的任何参数给路径函数都是一个字符串.
 # 在这里由于user_id声明为int类型,故而将传进来的user_id字符进行类型转换.
+
+# 可以定义任意多个路径参数 只要路径参数在路由函数的参数列表中有声明即可。
 ```
 
 > [!NOTE]
@@ -408,7 +410,31 @@ async def getUser(user_id:int):
 > 然后，你还可以使用路径 /user/{username} 来通过用户名 获取关于特定用户的数据。
 >
 > 由于路径操作是按顺序依次运行的(从上到下进行匹配)，你需要确保路径 /user/me 声明在路径 /user/{username}之前.否则，/user/{username} 的路径还将与 /user/me 相匹配，"认为"自己正在接收一个值为 "me" 的 username 参数。
+
+
+
+> [!NOTE]
 >
+> path 类型转换器
+>
+> 如果在路径参数中包含了有 斜杠 '/' 字符，且没有使用 path 类型转换器，那么FastAPI 会尝试进行分割，来匹配路由。而使用 path 类型转换器，就会将其视为一个整体
+>
+> ```python
+> # 未使用 path 类型转换器
+> @app.get("/test/file/{filePath}")
+> async def testPath(filePath:str):
+>     return {"code":200,"msg":"success","data":filePath}
+> 
+> # 当 url 为 http://localhost:8080/test/file/directory/myfile.txt 时
+> # 此时 FastAPI 会匹配路由到 /test/file/directory/ ,但实际上 filePath 就是 directory/myfile.txt
+> 
+> # 使用 path 类型转换器
+> @app.get("/test/file/{filePath : path}")
+> async def testPath(filePath:str):
+>     return {"code":200,"msg":"success","data":filePath}
+> 
+> # 此时 FastAPI 就会将 后面的 字符串视为一个整体 传递给 路径参数 filePath
+> ```
 
 ---
 
@@ -468,6 +494,33 @@ async def test_type(id:int,name:str,price:float,flag:bool):
 使用类型声明,fastapi会进行数据验证,在运行路由函数前验证请求数据是否符合你在类型声明中指定的类型,这有助于捕获错误并在早期阶段解决问题,从而避免了在服务器内部处理无效数据可能导致的错误和异常.
 
 ---
+
+##### Enum 枚举
+
+可以使用枚举来规范路径参数或查询参数的取值范围
+
+```python
+from enum import Enum
+
+class Name(str,Enum):
+    name1 = "Mrhow"
+    name2 = "mrhow"
+    
+@app.get("/test/enum")
+async def test_enum(name: Name) -> dict[str,Any] :
+    datas = {
+        "code" : 200,
+        "msg" : "success",
+        "data" : name
+    }
+    return datas
+```
+
+如果查询参数的name不是取值为'Mrhow'或'mrhow'，就会报错。
+
+---
+
+
 
 ##### typing类型注释
 
