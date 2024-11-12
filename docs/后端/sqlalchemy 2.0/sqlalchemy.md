@@ -288,6 +288,13 @@ with SessionLocal.begin() as session:
     
     query = select(User.name, User.email) # 多列，但不是整个对象
     result = session.execute(query).all()
+    
+    # 如果想直接返回查询到的对象，但是并不想该对象影响到sql数据库
+    user_sql = select(User).where(User.id==1)
+    user = session.execute(user_sql).scalars.first()
+    session.expunge(user)
+    return user
+
 ```
 
 `scalars()` 方法在 SQLAlchemy 2.0 中用于从查询结果中提取标量值或对象，当你查找整个对象的时候
@@ -297,6 +304,12 @@ with SessionLocal.begin() as session:
 当你查询多列但不是整个对象时，`scalars()` 方法默认提取第一列的值。你可以通过参数指定提取其他列的值。
 
 当你查询整个对象时，`scalars()` 方法会提取这些对象。
+
+
+
+`session.expunge(data)` 方法用于从 SQLAlchemy 的会话（Session）中移除一个对象，这意味着该对象将不再被会话跟踪。当你对一个对象调用 `expunge` 方法后，SQLAlchemy 将不再管理这个对象的生命周期，包括它的更改（如添加、修改或删除）将不会被自动同步到数据库中。
+
+
 
 异步
 
@@ -328,5 +341,168 @@ SessionLocal = sessionmaker(bind=engine)
 
 with SessionLocal.begin() as session:
     session.add(user)
+    # 如果要获取插入后的 ID，当然也可以 commit 之后再读
+	session.flush()   # flush 并不是 commit，并没有提交事务，应该是可重复读，和数据库的隔离级别有关。
+	print(user.id)
+    
+#################################
+# 异步
+
+asyncSessionLocal = async_sessionmaker(bind=engine)
+async with asyncSessionLocal.begin() as session:
+    session.add(user)
+    await session.flush()
+    
+```
+
+#### 编辑
+
+```python
+from sqlalchemy import update
+
+asyncSessionLocal = async_sessionmaker(bind=engine)
+async with asyncSessionLocal.begin() as session:
+    # 更新id为1的数据，并把name改为mrhow age改为18
+    _sql = update(User).where(User.id==1).values(name="mrhow",age=18)
+    await session.execute(_sql)
+    
+    # 或者直接对属性赋值
+    user.name = "mrhow"
+    user.age = 18
+    await session.commit()
+
+```
+
+
+
+#### 删除
+
+删除一般都是软删除
+
+物理删除（硬删除）：
+
+```python
+asyncSessionLocal = async_sessionmaker(bind=engine)
+async with asyncSessionLocal.begin() as session:
+    # 查到后删除
+    _sql = select(User).where(User.id==1)
+    user = (await session.execute(_sql)).scalars().first()
+    session.delete(user)
+```
+
+
+
+### 五、其他
+
+#### 加载外键关联模型
+
+如果我们在读取一个 N 个记录的列表之后，再去数据库中一一读取每个项目的具体值，就会产生 N+1 个 查询。这就是数据库中最常犯的错误：N+1 问题。
+
+默认情况下，查询中不会加载外键关联的模型，可以使用 selectinload 选项来加载外键，从而避免 N+1 问题。`select(Model).options(selectinload(Model.field))`
+
+```python
+session.execute(select(User)).scalars().all()  # 没有加载 parent 外键
+session.execute(select(User).options(selectinload(User.groups))).scalars().all()
+```
+
+Selectinload 的原理在于使用了 `select in` 子查询，这也是名字的又来。除了 selectinload 外， 还可以使用传统的 joinedload，它的原理就是最普通的 join table
+
+```python
+# 使用 joinedload 加载外键，注意需要使用 unique 方法，这是 2.0 中规定的。
+session.execute(select(User).options(joinedload(User.groups))).unique().scalars().all()
+```
+
+在 2.0 中，更推荐使用 selectinload 而不是 joinedload，一般情况下，selectinload 都要好， 而且不用使用 unique.
+
+
+
+#### 批量插入
+
+当需要插入大量数据的时候，如果依然采用逐个插入的方法，那么就会在和数据库的交互上浪费很多 时间，效率很低。MySQL 等大多数数据库都提供了 `insert ... values (...), (...) ...` 这种 批量插入的 API，在 SQLAlchemy 中也可以很好地利用这一点。
+
+```python
+# 使用 session.bulk_save_objects(...) 直接插入多个对象
+
+s = Session()
+objects = [
+    User(name="u1"),
+    User(name="u2"),
+    User(name="u3")
+]
+s.bulk_save_objects(objects)
+s.commit()
+
+# 使用 bulk_insert_mappings 可以省去创建对象的开销，直接插入字典
+users = [
+    {"name": "u1"},
+    {"name": "u2"},
+    {"name": "u3"},
+]
+s.bulk_insert_mappings(User, users)
+s.commit()
+
+# 使用 bulk_update_mappings 可以批量更新对象，字典中的 id 会被用作 where 条件，
+# 其他字段全部用于更新
+session.bulk_update_mappings(User, users)
+```
+
+
+
+#### sqlalchemy 模型 转 pytantic 模型
+
+```python
+from typing import Container, Optional, Type
+from pydantic import BaseModel, ConfigDict, create_model
+
+orm_config = ConfigDict(from_attributes=True)
+
+def sqlalchemy_to_pydantic(
+    db_model: Type, *, config: Type = orm_config, exclude: Container[str] = []
+) -> Type[BaseModel]:
+    table = db_model.metadata.tables[db_model.__tablename__]
+    fields = {}
+    for column in table.columns:
+        name = column.name
+        if name in exclude:
+            continue
+        python_type: Optional[type] = None
+        if hasattr(column.type, "impl"):
+            if hasattr(column.type.impl, "python_type"):
+                python_type = column.type.impl.python_type
+        elif hasattr(column.type, "python_type"):
+            python_type = column.type.python_type
+        assert python_type, f"Could not infer python_type for {column}"
+
+        if not column.nullable:
+            fields[name] = (python_type, ...)
+        else:
+            fields[name] = (Optional[python_type], None)
+
+    pydantic_model = create_model(db_model.__name__, __config__=config, **fields)
+    return pydantic_model
+
+
+```
+
+
+
+#### sqlalchemy 对象 序列化
+
+```python
+class User(Base):
+    id: Mapped[int] = mapped_column(primary_key=True,index=True, autoincrement=True, comment="主键id")
+    uuid: Mapped[str] = mapped_column(String(50), init=False, default_factory=uuid4_str, unique=True)
+    name: Mapped[str] = mapped_column(String(50),unique=True,index=True,comment="用户名")
+    
+	def to_dict(self):
+		return {c.name: getattr(self, c.name, None) for c in self.__table__.columns}
+    
+    
+asyncSessionLocal = async_sessionmaker(bind=engine)
+async with asyncSessionLocal.begin() as session:
+     # 查对象数据
+    user_sql = select(User).where(User.id==1)
+    user = (await session.execute(user_sql)).scalars.first()
+    user_dict = user.to_dict()
 ```
 

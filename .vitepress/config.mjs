@@ -46,6 +46,9 @@ export default defineConfig({
         {text: 'FastAPI',link: '/后端/fastapi/fastapi'},
         {text: 'Redis基础',link:'/后端/redis/Redis_基础篇'},
         {text: 'Docker',link: '/后端/docker/docker'},
+        {text: 'Httpx',link: '/后端/httpx/httpx'},
+        {text: 'Python异步编程',link: '/后端/python异步编程/python异步'},
+        {text: 'sqlalchemy 2.0',link: '/后端/sqlalchemy 2.0/sqlalchemy'},
         {text: 'Linux',items:[
           {text: 'Linux常用命令',link: '/后端/linux命令/Linux命令'},
           {text: 'Screen',link:'/后端/screen/screen'},
