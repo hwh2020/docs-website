@@ -39,7 +39,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Java后端', items:[
         {text: 'Java', link: '/后端/java/java'},
-        {text: 'JavaWeb',link: '/后端/java_web/java_web'}
+        {text: 'JavaWeb',link: '/后端/javaweb/javaweb'}
       ]},
       { text: 'backend', items:[
         {text: 'nginx基础',link: '/后端/nginx/nginx_base'},
