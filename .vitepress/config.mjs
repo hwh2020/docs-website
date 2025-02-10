@@ -38,7 +38,8 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Java后端', items:[
-        {text: 'Java', link: '/后端/java/java'}
+        {text: 'Java', link: '/后端/java/java'},
+        {text: 'JavaWeb',link: '/后端/javaWeb/javaWeb'}
       ]},
       { text: 'backend', items:[
         {text: 'nginx基础',link: '/后端/nginx/nginx_base'},
