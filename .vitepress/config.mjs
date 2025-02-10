@@ -48,7 +48,7 @@ export default defineConfig({
         {text: 'Docker',link: '/后端/docker/docker'},
         {text: 'Httpx',link: '/后端/httpx/httpx'},
         {text: 'Python异步编程',link: '/后端/python异步编程/python异步'},
-        {text: 'sqlalchemy 2.0',link: '/后端/sqlalchemy 2.0/sqlalchemy'},
+        {text: 'sqlalchemy 2.0', link: '/后端/sqlalchemy 2.0/sqlalchemy'},
         {text: 'alembic', link: '/后端/alembic/alembic'},
         {text: 'Linux',items:[
           {text: 'Linux常用命令',link: '/后端/linux命令/Linux命令'},
