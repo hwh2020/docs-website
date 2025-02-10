@@ -22,7 +22,7 @@ docker run -id --name=rabbitmq --hostname mq -v /usr/local/docker/rabbitmq:/var/
 
 浏览器访问
 
-http://localhost:15672
+`http://localhost:15672`
 
 
 
