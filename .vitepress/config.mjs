@@ -53,7 +53,8 @@ export default defineConfig({
           {text: 'Linux常用命令',link: '/后端/linux命令/Linux命令'},
           {text: 'Screen',link:'/后端/screen/screen'},
           {text: 'Tmux',link:'/后端/tmux/tmux'}
-        ]}
+        ]},
+        {text: 'alembic', link: '/后端/alembic/alembic'}
       ] },
       {text: '爬虫', items:[
         {text: 'selenium',link: '/后端/selenium/selenium'}
