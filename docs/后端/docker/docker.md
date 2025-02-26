@@ -191,9 +191,15 @@ docker inspect <container-name>
 #### 查看容器运行日志
 
 ```shell
-docker logs <container-name>
-docker logs <container-id>
+docker logs [options] <container-name>
+docker logs [options] <container-id> 
+# -f 实时输出日志
+# --since string 输出指定日期之后的日志
+# --tail string 最后多少行日志
+# -t 显示时间戳
 ```
+
+
 
 #### 保存容器为镜像
 

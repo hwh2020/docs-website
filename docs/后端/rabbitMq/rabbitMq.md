@@ -230,4 +230,162 @@ def main():
 
 
 
-三、高级篇
+### 三、集成到fastapi
+
+```python
+# -*- coding: utf-8 -*-
+"""
+@Time : 2025/2/8 11:22
+@Author : Mr.how
+@Des: xxx
+"""
+import json
+import asyncio
+import time
+from datetime import datetime
+import pickle
+from dataclasses import dataclass
+from aio_pika import connect, connect_robust, Message, IncomingMessage, Channel
+from aio_pika.abc import AbstractRobustConnection, AbstractRobustChannel
+from aio_pika.pool import Pool
+
+from app.core.logger import logger
+from app.settings.config import settings
+
+from app.utils.check_expired_orders import close_order
+
+
+
+@dataclass
+class RabbitMQClient:
+    url: str| None = None
+    connection_pool: Pool|None = None
+    channel_pool: Pool|None = None
+
+
+    async def __clear(self) -> None:
+        """
+            清除资源，关闭链接
+        """
+        if not self.channel_pool.is_closed:
+            await self.channel_pool.close()
+        if not self.connection_pool.is_closed:
+            await self.connection_pool.close()
+        self.channel_pool = None
+        self.connection_pool = None
+        self.url = None
+
+    async def __get_connection(self) -> AbstractRobustConnection:
+        return await connect_robust(self.url)
+    async def __get_channel(self) -> Channel:
+        async with self.connection_pool.acquire() as connection:
+            return await connection.channel(publisher_confirms=False)
+
+    async def connect(self) -> None:
+        """
+            链接RabbitMQ
+        """
+        logger.info("正在连接RabbitMQ")
+        try:
+            RABBIT_URL = f"amqp://{settings.RABBITMQ_USER}:{settings.RABBITMQ_PASSWORD}@{settings.RABBITMQ_HOST}:{settings.RABBITMQ_PORT}/"
+            logger.debug(f"正在连接RabbitMQ: {RABBIT_URL}")
+            self.url = RABBIT_URL
+            self.connection_pool = Pool(self.__get_connection, max_size=2)
+            self.channel_pool = Pool(self.__get_channel, max_size=10)
+            # self.connection = await connect_robust(RABBIT_URL)
+            # self.channel = await self.connection.channel(publisher_confirms=False)
+            logger.info("成功连接到RabbitMQ")
+        except Exception as e:
+            logger.error(f"{e}")
+            await self.__clear()
+
+    async def disconnect(self) -> None:
+        """
+            关闭连接
+        """
+        await self.__clear()
+
+    async def send_message(self, messages: list | dict, routing_key: str, delayQueueName: str, delay:int = 5) -> None:
+        """
+            发送消息到队列
+        """
+        async with self.channel_pool.acquire() as channel:
+
+            if isinstance(messages, dict):
+                messages = [messages]
+
+            # 声明死信交换机
+            dlx_exchange = await channel.declare_exchange("order_exchange")
+            dlx_queue = await channel.declare_queue("cancelOrder", durable=True)
+            await dlx_queue.bind(dlx_exchange, routing_key)
+
+            # 声明延迟交换机 与 延迟队列
+            delay_exchange = await channel.declare_exchange("delay_exchange",type="direct")
+            delay_queue = await channel.declare_queue(delayQueueName,durable=True, arguments={
+                "x-dead-letter-exchange": "order_exchange",  # 指定了消息过期后转发到的目标交换机和路由键
+                'x-dead-letter-routing-key': routing_key,  # 死信路由键
+                "x-message-ttl": delay * 1000  # 设置消息过期时间（毫秒）
+            })
+            await delay_queue.bind(delay_exchange, routing_key)
+
+            async with channel.transaction(): # 开启事务
+                # exchange = await self.channel.declare_exchange(direct,type="direct")  # 先声明交换机
+                # queue = await self.channel.declare_queue(routing_key, durable=True)  # 再声明队列
+                # passive 是否被动的 如果这个是True,那么如果队列不存在的话，启动消费者 会直接的抛出异常，默认为false的，如果队列不存在的话，也不会报异常
+                # durable 消息队列是否是持久化， True开启 false关闭： 关闭的话，如果重启RABBIT，所有的队列消息会丢失
+                # exclusive  设置是否排他，队列是否是独占模式 ，独占模式是指当前的队列只限于当前的链接，如果连接断开，其他也无法来使用此队列
+                # await queue.bind(exchange, routing_key)  # 将队列绑定到交换机
+                for message in messages:
+                    message = Message(body=json.dumps(message).encode())
+                    await delay_exchange.publish(message, routing_key=routing_key) # 发送消息,交换器会自动路由到绑定的队列中
+
+
+    async def consume(self, queueName:str = "cancelOrder") -> None:
+        """
+            消费
+        """
+        async with self.channel_pool.acquire() as channel:
+            await channel.set_qos(prefetch_count=10)
+            queue = await channel.get_queue(queueName)
+            async with queue.iterator() as queue_iter:
+                async for message in queue_iter:
+                    try:
+                        message_dict = json.loads(message.body)
+                        logger.info(f"执行取消订单:{message_dict}, time:{time.time()}")
+                        await close_order(message_dict['order_sn'])
+                        await message.ack()
+                    except Exception as e:
+                        logger.error(f"{e}")
+                        await message.nack()
+
+
+rabbit_client = RabbitMQClient()
+
+
+
+async def on_message(message: IncomingMessage):
+    """
+        消息处理回调函数
+    """
+
+    async with message.process(reject_on_redelivered=True):
+        await asyncio.sleep(5)
+    logger.info(f"模拟取消订单：{message.body.decode()}, time:{datetime.now()}")
+        # logger.info(f"Received message: {}")
+
+
+async def cancelOrderOnMessage(message: IncomingMessage):
+    async with message.process():
+        message = json.loads(message.body)
+        logger.debug(f"message:{message}")
+        await close_order(message['order_sn'])
+
+
+async def start_consumer():
+    # asyncio.run(rabbit_client.consume(exchangeName,on_message))
+    await rabbit_client.consume(queueName="cancelOrder")
+    # await asyncio.Future()
+
+
+```
+
