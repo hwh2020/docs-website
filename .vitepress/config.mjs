@@ -52,7 +52,7 @@ export default defineConfig({
         {text: 'sqlalchemy 2.0', link: '/后端/sqlalchemy 2.0/sqlalchemy'},
         {text: 'alembic', link: '/后端/alembic/alembic'},
         {text: 'MySQL', link: '/后端/mysql/mysql'},
-        {text: 'minIO', link: '/后端/minio/MinIO'}
+        {text: 'minIO', link: '/后端/minio/MinIO'},
         {text: 'Linux',items:[
           {text: 'Linux常用命令',link: '/后端/linux命令/Linux命令'},
           {text: 'Screen',link:'/后端/screen/screen'},
