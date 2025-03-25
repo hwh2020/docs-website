@@ -39,7 +39,7 @@ export default defineConfig({
       { text: 'Home', link: '/' },
       { text: 'Java后端', items:[
         {text: 'Java', link: '/后端/java/java'},
-        {text: 'JavaWeb',link: '/后端/javaweb/javaweb'}
+        {text: 'JavaWeb', link: '/后端/Javaweb/javaweb'}
       ]},
       { text: 'backend', items:[
         {text: 'nginx基础',link: '/后端/nginx/nginx_base'},
@@ -51,6 +51,8 @@ export default defineConfig({
         {text: 'Python异步编程',link: '/后端/python异步编程/python异步'},
         {text: 'sqlalchemy 2.0', link: '/后端/sqlalchemy 2.0/sqlalchemy'},
         {text: 'alembic', link: '/后端/alembic/alembic'},
+        {text: 'MySQL', link: '/后端/mysql/mysql'},
+        {text: 'minIO', link: '/后端/minio/MinIO'},
         {text: 'Linux',items:[
           {text: 'Linux常用命令',link: '/后端/linux命令/Linux命令'},
           {text: 'Screen',link:'/后端/screen/screen'},
