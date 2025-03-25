@@ -2145,9 +2145,145 @@ public LoginInfo login(Emp emp){
 
  ![](./javaWeb_imgs/AOP介绍.png)
 
+#### 快速入门
+
+需求：统计所有业务层方法的执行耗时
+
+- 导入依赖，在pom.xml中 引入AOP的依赖
+
+   ```xml
+   <dependency>
+   	<groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-aop</artifactId>
+   </dependency>
+   ```
+
+- 编写AOP程序，针对特定的方法根据业务需要进行编程
+
+  ```java
+  @Aspect
+  @Component
+  public class RecordTimeApsect {
+      @Around("execution(* com.itheima.service.impl.*.*(..))")
+      public Object recordTime(ProceedingJoinPoint pjp) throws Throwable {
+          long beginTime = System.currentTimeMillis();
+          // 执行；原始的方法
+          Object result = pjp.proceed();
+          long endTime = System.currentTimeMillis();
+          log.info("执行耗时：{} ms",endTime - beginTime);
+          return result;
+      }
+  }
+  ```
+
+  @Aspect 声明该类是AOP类
+
+  @Aroud 表示针对哪些方法进行编程
+
+  示例中是对 com.itheima.service.impl 包下的所有类当中所有方法生效， 即所有业务层方法
+
+#### 核心概念
+
+- 连接点：JoinPoint， 可以被AOP控制的方法 （暗含方法执行时相关信息）
+
+  service层，controller层，mapper层都可以
+
+- 通知：Advice， 指那些重复的逻辑，也就是共性功能（最终体现为一个方法）
+
+- 切入点：PointCut， 匹配连接点的条件，通知仅会在切入点方法执行时被应用
+
+- 切面：Aspect，描述通知与切入点的对应关系（通知+切入点）
+
+- 目标对象：Target，通知所应用的对象
+
+ ![](./javaWeb_imgs/AOP执行流程.png)
+
+#### AOP进阶
+
+通知类型： 根据通知方法执行时机的不同，将通知类型分为以下常见的五类：
+
+- @Around: 环绕通知，此注解标注的通知方法在目标方法前、后都有被执行
+- @Before: 前置通知，此注解标注的通知方法在目标方法前被执行
+- @After： 后置通知，此注解标注的通知方法在目标方法后执行，无论是否有异常都会执行
+- @AfterReturning：返回后通知，此注解标注的通知方法在目标方法后执行，有异常不会执行
+- @AfterThrowing：异常后通知，此注解标注的通知方法发生异常后执行
+
+注意：
+
+- @Around环绕通知需要自己调用 ProceedingJoinPoint.proceed() 让原始方法执行，其他通知不需要考虑。
+- @Around环绕通知方法的返回值，必须指定为Object，来接收原始方法的返回值
 
 
 
+@PointCut ：该注解的作用是将公共的切点表达式抽取出来
+
+```java
+@PointCut("execution(* com.itheima.service.impl.*.*(..))")
+public void pt() {}
+
+@Around("pt()")
+public Object recordTime(ProceedingJoinPoint pjp) throws Throwable { ... }
+```
+
+ ![](./javaWeb_imgs/抽取切入点表达式.png)
+
+
+
+通知顺序
+
+当有多个切面的切入点都匹配到了目标方法，目标方法运行时，多个通知方法都会被执行
+
+- 不同切面类中，默认按照切面类的类名字母排序：
+  - 目标方法前的通知方法：字母排名靠前的先执行
+  - 目标方法后i的通知方法：字母排名靠前的后执行
+- 用 @Order(数字) 加在切面类上控制顺序
+  - 目标方法前的通知方法：数字小的先执行
+  - 目标方法后的通知方法：数字小的后执行
+
+切入点表达式
+
+常见形式：
+
+- execution(...): 根据方法的签名来匹配
+
+   ![](./javaWeb_imgs/切入点表达式execution.png)
+
+- @annotation(...)：根据注解匹配
+
+   ![](./javaWeb_imgs/切入点表达@annotation.png)
+
+  自定义注解
+
+  定义一个 anno包，专门存放注解
+
+  ```java
+  package com.itheima.anno;
+  import java.lang.annotation.RelentionPolicy;
+  import java.lang.annotation.Retention;
+  import java.lang.annotation.ElementType;
+  import java.lang.annotation.Target;
+  
+  // @Target() 是修饰注解的注解，是元注解
+  // @Retention() 是修饰注解的生效时机
+  @Target(ElementType.METHOD) // 表示该注解只能加在方法上
+  @Retention(RetentionPolicy.RUNTIME) // 表示该注解在运行时生效
+  public @interface LogOperation {
+  }
+  ```
+
+  
+
+连接点：
+
+在Spring中用JoinPoint抽象了连接点，用它可以获得方法执行时的相关信息，如目标类名、方法名、方法参数等。
+
+- 对于 @Around 通知，获取连接点信息只能使用ProceedingJoinPoint
+
+    ![](./javaWeb_imgs/环绕通知获取连接点信息.png)
+
+- 对于其它四种通知，获取连接点信息只能使用 JoinPoint，它是 ProceedingJoinPoint 的父类型
+
+   ![](./javaWeb_imgs/其他通知获取连接点信息.png)
 
 
 
