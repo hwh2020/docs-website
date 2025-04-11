@@ -32,7 +32,7 @@ git是一款分布式版本控制工具,可以快速高效处理中小型到大�
 
    事分两面，有好有坏。这么做显而易见的缺点是中央服务器的单点故障。如果服务器宕机一小时，那么在这一小时内，谁都无法提交更新，也就无法协同工作。
 
-   ![](./git_img/集中式版本控制.jpg)
+   <img src="git_img/集中式版本控制.jpg" style="zoom: 50%;" />
 
 2. 分布式版本控制工具
 
@@ -46,11 +46,11 @@ git是一款分布式版本控制工具,可以快速高效处理中小型到大�
 
    每个客户端保存的也都是整个完整的项目（包含历史记录，更加安全）
    
-   ![](git_img/分布式版本控制.png)
+   <img src="git_img/分布式版本控制.png" style="zoom:50%;" />
 
 #### Git工作机制
 
-![](./git_img/Git工作机制.jpg)
+<img src="git_img/Git工作机制.jpg" style="zoom:50%;" />
 
 #### Git和代码托管中心
 
@@ -72,67 +72,67 @@ Gitee码云（国内网站）
 
 1. 查看协议,直接点击next
 
-   ![](./git_img/git安装_01.jpg)
+   <img src="git_img/git安装_01.jpg" style="zoom: 67%;" />
 
 2. 选择Git安装位置，要求是非中文并且没有空格的目录，然后下一步
 
-   ![](git_img/git安装_02.jpg)
+   <img src="git_img/git安装_02.jpg" style="zoom:67%;" />
 
 3. Git选项配置,推荐默认设置,然后下一步
 
-   ![](git_img/git安装_03.jpg)
+   <img src="git_img/git安装_03.jpg" style="zoom:67%;" />
 
 4. Git安装目录名，不用修改，直接点击下一步
 
-   ![](git_img/git安装_04.jpg)
+   <img src="git_img/git安装_04.jpg" style="zoom:67%;" />
 
 5. Git的默认编辑器，建议使用默认的Vim编辑器，然后点击下一步
 
-   ![](git_img/git安装_05.jpg)
+   <img src="git_img/git安装_05.jpg" style="zoom:67%;" />
 
 6. 默认分支名设置，选择让Git决定，分支名默认为master，下一步
 
-   ![](git_img/git安装_06.jpg)
+   <img src="git_img/git安装_06.jpg" style="zoom:67%;" />
 
 7. 修改Git的环境变量，选第一个，不修改环境变量，只在Git Bash里使用Git。
 
-   ![](git_img/git安装_07.jpg)
+   <img src="git_img/git安装_07.jpg" style="zoom:67%;" />
 
 8. 选择后台客户端连接协议，选默认值OpenSSL，然后下一步
 
-   ![](git_img/git安装_08.jpg)
+   <img src="git_img/git安装_08.jpg" style="zoom:67%;" />
 
 9. 配置Git文件的行末换行符，Windows使用CRLF，Linux使用LF，选择第一个自动转换，然后继续下一步。
 
-   ![](git_img/git安装_09.jpg)
+   <img src="git_img/git安装_09.jpg" style="zoom:67%;" />
 
 10. 选择Git终端类型，选择默认的Git Bash终端，然后继续下一步。
 
-    ![](git_img/git安装_10.jpg)
+    <img src="git_img/git安装_10.jpg" style="zoom:67%;" />
 
 11. 选择Git pull合并的模式，选择默认，然后下一步。
 
-    ![](git_img/git安装_11.jpg)
+    <img src="git_img/git安装_11.jpg" style="zoom:67%;" />
 
 12. 选择Git的凭据管理器，选择默认的跨平台的凭据管理器，然后下一步。
 
-    ![](git_img/git安装_12.jpg)
+    <img src="git_img/git安装_12.jpg" style="zoom:67%;" />
 
 13. 其他配置，选择默认设置，然后下一步。
 
-    ![](git_img/git安装_13.jpg)
+    <img src="git_img/git安装_13.jpg" style="zoom:67%;" />
 
 14. 实验室功能，技术还不成熟，有已知的bug，不要勾选，然后点击右下角的Install按钮，开始安装Git。
 
-    ![](git_img/git安装_14.jpg)
+    <img src="git_img/git安装_14.jpg" style="zoom:67%;" />
 
 15. 点击Finsh,Git安装成功.
 
-    ![](git_img/git右键菜单.png)
+    <img src="git_img/git右键菜单.png" style="zoom: 80%;" />
 
     在Git Bash终端里输入git --version查看git版本，如图所示，说明Git安装成功。
 
-    ![](git_img/git_bash界面.png)
+    <img src="git_img/git_bash界面.png" style="zoom:80%;" />
 
 ### Git常用命令
 
@@ -150,6 +150,15 @@ Gitee码云（国内网站）
 | git push origin dev:master | 本地dev分支推送到origin主机的master分支 |
 | git remote add <remote_name>  <remote_url> | 关联远程仓库 |
 | git pull origin master | 拉取远程分支(master)与当前分支进行合并. |
+| git branch | 列出本地已存在的分支，当前分支会用*标记   -r：查看远程版本库的分支列表。  -a：查看所有分支列表（包括本地和远程）。  -v：查看一个分支的最后一次提交。 |
+| git branch --set-upstream-to=origin/dev | 关联上远程仓库的`dev`分支 |
+| git remote show origin | 显示指定远程仓库的详细信息，包括 URL 和跟踪分支 |
+| git checkout 分支名 | 切换到自己想要提交的分支 |
+| git checkout -b test origin/test | 在**远程仓库**上以`dev`分支为起点，创建了`test`分支 |
+
+
+
+
 
 #### 设置用户签名
 
@@ -214,7 +223,7 @@ git log #查看版本详细信息
 
 ##### 版本穿梭
 
-![](git_img/git_reflog.png)
+<img src="git_img/git_reflog.png" style="zoom:80%;" />
 
 ```shell
 git reset --hard 版本号 #回滚到之前的版本
@@ -242,7 +251,7 @@ git rebase -i <commit-hash>
 
 ![](git_img/git_log.png)
 
-![](./git_img/git_rebase.png)
+![](git_img/git_rebase.png)
 
 #### 恢复被删除的提交记录
 
@@ -260,6 +269,17 @@ git push #推送恢复后的代码到远程仓库
 
 
 
+### 合并
+
+```shell
+```
+
+
+
+### 变基
+
+
+
 
 
 ### Git客户端
@@ -270,31 +290,31 @@ git push #推送恢复后的代码到远程仓库
 
 #### 设置个人信息
 
-![](git_img/git客户端设置个人信息.png)
+<img src="git_img/git客户端设置个人信息.png" style="zoom: 80%;" />
 
 #### 创建新的Git仓库
 
-![](git_img/git客户端新建仓库.png)
+<img src="git_img/git客户端新建仓库.png" style="zoom: 80%;" />
 
 #### 提交不同的版本
 
 新建test.txt文件,写入信息.之后在GitGui上面提交.
 
-![](git_img/git客户端新建文件.png)
+<img src="git_img/git客户端新建文件.png" style="zoom: 80%;" />
 
 多次提交的版本可以直接在History页面查看区别，不需要再使用reset命令。
 
-![](git_img/git客户端查看历史版本.png)
+<img src="git_img/git客户端查看历史版本.png" style="zoom: 80%;" />
 
 #### 连接GitHub远程仓库
 
 登录自己的GitHub账号.
 
-![](git_img/git客户端登录GitHub账号.png)
+<img src="git_img/git客户端登录GitHub账号.png" style="zoom: 80%;" />
 
 先在本地构建出项目,然后点击Publish将当前项目创建到GitHub上面.
 
-![](git_img/git客户端连接到Github.png)
+<img src="git_img/git客户端连接到Github.png" style="zoom: 80%;" />
 
 之后修改本地文件,就可以推送到本地git,之后再远程同步到GitHub仓库中.
 
@@ -302,45 +322,45 @@ git push #推送恢复后的代码到远程仓库
 
 另一种方式是先在GitHub上创建远程仓库,之后再拉取到本地保持统一.
 
-![](git_img/git客户端拉去远程仓库.png)
+<img src="git_img/git客户端拉去远程仓库.png" style="zoom: 80%;" />
 
 连接完成远程仓库和本地Git之后，在本地修改文件提交Git之后再push推送即可完成同步。
 
 如果要拉去别人的github项目,得通过URL方式拉取
 
-![](git_img/远程仓库URL.png)
+<img src="git_img/远程仓库URL.png" style="zoom: 80%;" />
 
-![](git_img/git客户端拉取远程仓库.png)
+<img src="git_img/git客户端拉取远程仓库.png" style="zoom: 80%;" />
 
 #### 连接Gitee远程仓库
 
 首先获取gitee的远程仓库的URL
 
-![](git_img/Gitee_URL.png)
+<img src="git_img/Gitee_URL.png" style="zoom: 80%;" />
 
 然后新建仓库并克隆gitee的远程仓库.
 
-![](git_img/克隆gitee远程仓库.png)
+<img src="git_img/克隆gitee远程仓库.png" style="zoom:80%;" />
 
 之后修改本地文件,就可以推送到本地git,之后再远程同步到Gitee仓库中.点击Push origin
 
-![](git_img/Gitee连接.png)
+<img src="git_img/Gitee连接.png" style="zoom: 80%;" />
 
 最后也可以在GitHub Desktop里修改remote设置.
 
-![](git_img/repository_settings.png)
+<img src="git_img/repository_settings.png" style="zoom: 80%;" />
 
-![](git_img/remote.png)
+<img src="git_img/remote.png" style="zoom: 80%;" />
 
 ### IDEA(pycharm)使用Git
 
 打开项目设置,选择git设置.
 
-![](git_img/IDEA设置Git.png)
+<img src="git_img/IDEA设置Git.png" style="zoom: 80%;" />
 
 然后在上面的导航栏选择VCS选项,点击创建Git仓库.
 
-![](git_img/IDEA创建Git仓库.png)
+<img src="git_img/IDEA创建Git仓库.png" style="zoom: 80%;" />
 
 #### 配置Git忽略文件
 
@@ -348,7 +368,7 @@ git push #推送恢复后的代码到远程仓库
 
 另一种方法是:可以使ignore文件不在项目里出现,在电脑内部配置.在电脑的家目录下`C:\Users\用户\`有个`.gitconfig`配置文件,打开发现
 
-![](git_img/gitconfig.png)
+<img src="git_img/gitconfig.png" style="zoom:80%;" />
 
 之后打开`git.ignore`,添加忽略规则(python).
 
@@ -496,4 +516,4 @@ cython_debug/
 
 #### 连接远程仓库
 
-![](./git_img/IDEA连接远程仓库.png)
+![](git_img/IDEA连接远程仓库.png)

@@ -44,6 +44,7 @@ export default defineConfig({
       { text: 'backend', items:[
         {text: 'nginx基础',link: '/后端/nginx/nginx_base'},
         {text: 'Git',link: '/后端/git/git'},
+        {text: 'Git命令',link: '/后端/git/git命令'},
         {text: 'FastAPI',link: '/后端/fastapi/fastapi'},
         {text: 'Redis基础',link:'/后端/redis/Redis_基础篇'},
         {text: 'Docker',link: '/后端/docker/docker'},
