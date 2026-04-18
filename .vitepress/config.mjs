@@ -66,7 +66,10 @@ export default defineConfig({
 
       { text: 'AI', items:[
         {text: '神经网络与深度学习',link: '/AI学习/神经网络与深度学习/神经网络与深度学习'},
-        {text: '提示工程',link:'/AI学习/提示工程/prompt_engineering'}
+        {text: '提示工程',link:'/AI学习/提示工程/prompt_engineering'},
+        {text: 'LangChain', link: '/ai/langChain'},
+        {text: 'LangChain Postgres', link: '/ai/langChain_postgres'},
+        {text: 'RAG', link: '/ai/rag'}
       ]},
       
       { text: 'Other', items:[
